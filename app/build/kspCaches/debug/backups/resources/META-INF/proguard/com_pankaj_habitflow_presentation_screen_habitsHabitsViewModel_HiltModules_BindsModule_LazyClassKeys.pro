@@ -1,0 +1,3 @@
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.AddEditHabitViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.AddEditHabitViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.HabitsViewModel

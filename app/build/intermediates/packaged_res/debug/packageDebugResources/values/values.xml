@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="com_google_android_gms_fonts_certs">
+        <item>@array/com_google_android_gms_fonts_certs_dev</item>
+        <item>@array/com_google_android_gms_fonts_certs_prod</item>
+    </array>
+    <string-array name="com_google_android_gms_fonts_certs_dev">
+        <item>
+            MIIEqDCCA5CgAwIBAgIJANWFuGx90071MA0GCSqGSIb3DQEBBAUAMIGUMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEQMA4GA1UEChMHQW5kcm9pZDEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDEiMCAGCSqGSIb3DQEJARYTYW5kcm9pZEBhbmRyb2lkLmNvbTAeFw0wODA0MTUyMzM2NTZaFw0zNTA5MDEyMzM2NTZaMIGUMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEQMA4GA1UEChMHQW5kcm9pZDEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDEiMCAGCSqGSIb3DQEJARYTYW5kcm9pZEBhbmRyb2lkLmNvbTCCASAwDQYJKoZIhvcNAQEBBQADggENADCCAQgCggEBANbOLggKv+IxTdGNs8/TGFy0PTP6DHThvbbR24kT9ixcOd9W+EaBPWW+wPPKQmsHxajtWjmQwWfna8mZuSeJS48LIgAZlKkpFeVyxW0qMBujb8X8ETrWy550PaFtI6t9+u7hZeTfHwqNvacKhp1RbE6dBRGWynwMVX8XW8N1+UjFaq6GCJukT4qmpN2afb8sCjUigq0GuMwYXrFVee74bQgLHWGJwPmvmLHC69EH6kWr22ijx4OKXlSIx2xT1AsSHee70w5iDBiK4aph27yH3TxkXy9V89TDdexAcKk/cVHYNnDBapcavl7y0RiQ4biu8ymM8Ga/nmzhRKya6G0cGw8CAQOjgfwwgfkwHQYDVR0OBBYEFI0cxb6VBER2a9cUQ5tqWKR+ASEOMB8GA1UdIwQYMBaAFI0cxb6VBER2a9cUQ5tqWKR+ASEOMA8GA1UdEwEB/wQFMAMBAf8wCwYDVR0PBAQDAgEGME0GA1UdHwRGMEQwQqBAoD6GPGh0dHA6Ly9hbmRyb2lkLmdpdGh1Yi5pby9kZXZpY2VfcmVmZXJlbmNlL2NlcnRpZmljYXRlcy9jcmwucGVtMFoGA1UdEQRTMFGBE2FuZHJvaWRAYW5kcm9pZC5jb22GGmh0dHA6Ly93d3cuYW5kcm9pZC5jb20vhh1odHRwOi8vZGV2ZWxvcGVyLmFuZHJvaWQuY29tLzANBgkqhkiG9w0BAQQFAAOCAQEAVkJ1j7grc3jXH2YdGRvP+qLnizJhGO1YHXw6a/RGbKTv+dFd9p5v+hHvdGpoLNiYPkKlJEHYGhzA+HYdUCH3bVVWJmYMy0jrDKFRGGbmOdJeYW0b4Qi/Kx/pGcOuFC9FYkS3S/FEaZcMm1liFkWsgBhPB6YMy06D/as8tM8R5Yfb7Sra/JTiKW0M57PereFMFfGhUSidlYk+LlSTShiMIYCK8Ws4p6xAMzqD7D8f9+Kv2y7mzP8jPHe3LqIKTNijB3WjHPf7We2GjEqKDnlqvV0f+gO7WFzmGrMBn1gJq/mRiSi6+8bxjMSH5FNJacb94g6Gq/0IyiA==
+        </item>
+    </string-array>
+    <string-array name="com_google_android_gms_fonts_certs_prod">
+        <item>
+            MIIEQzCCAyugAwIBAgIJAMLgh0ZkSjCNMA0GCSqGSIb3DQEBBAUAMHQxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDAeFw0wODA4MjEyMzEzMzRaFw0zNjAxMDcyMzEzMzRaMHQxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDCCASAwDQYJKoZIhvcNAQEBBQADggENADCCAQgCggEBAKtWLgDYO6IIrgqWbxJOKdoR8qtW0I9Y4sypEwPpt1TTcvZApxsdyxMJZ2JORland2qSGT2y5b+3JKkedxiLDmpHpDsz2WCbdxgxRczfey5YZnTJ4VZbH0xqWVW/8lGmPav5xVwnIiJS6HXk+BVKZF+JcWjAsb/GEuq/eFdpuzSqeYTcfi6idkyugwfYwXFU1+5fZKUaRKYCwkkFQVfcAs1fXA5V+++FGfvjJ/CxURaSxaBvGdGDhfXE28LWuT9ozCl5xw4Yq5OGazvV24mZVSoOO0yZ31j7kYvtwYK6NeADwbSxDdJEqO4k//0zOHKrUiGYXtqw/A0LFFtqoZKFjnkCAQOjgdkwgdYwHQYDVR0OBBYEFMd9jMIhF1Ylmn/Tgt9r45jk14alMIGmBgNVHSMEgZ4wgZuAFMd9jMIhF1Ylmn/Tgt9r45jk14teleGdpIGaMIG5MQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEQMA4GA1UEChMHQW5kcm9pZDEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDEiMCAGCSqGSIb3DQEJARYTYW5kcm9pZEBhbmRyb2lkLmNvbYIJAMLgh0ZkSjCNMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEEBQADggEBABnTDPEF9eS1jCOF2YfH0C0cWaiYxpOLJjdJhBZJA4+ah07YsKVq/JMzNHMEFgGR3UT0pZ2TDRipBYdnrf8w0uuJIbmMQ0Cjn1ADWkSg9eNITnD4QF+9Dmek/lstUj0u7m50e4yYhJTP1U/x3eJEuJBLoWkBBJPp0y2xViXfJNLCO9RC887/O4+SZjE4UkjD6g3Ih7f0/bu5x0YGSKCe3zsg10OOXPwMwJ0+fLlMBfBL5hHmGUahj7mB1Gfkqfh0XHM2YBELAiHPMDfdiOQXzL8LrsxwR4e35cF0fRUjv9KJn8w3E1CTPQ9ueXg5FSulmc7jVHh0EZKi1ftNA=
+        </item>
+    </string-array>
+    <string name="about">About</string>
+    <string name="add_habit">Add Habit</string>
+    <string name="all_done_today">All done for today! 🎉</string>
+    <string name="all_time">All Time</string>
+    <string name="app_name">HabitFlow</string>
+    <string name="archive">Archive</string>
+    <string name="average_rate">Average Rate</string>
+    <string name="best_day">Best Day</string>
+    <string name="cancel">Cancel</string>
+    <string name="category">Category</string>
+    <string name="color">Color</string>
+    <string name="completed">Completed</string>
+    <string name="completion_rate">Completion Rate</string>
+    <string name="current_streak">Current Streak</string>
+    <string name="daily_reminder">Daily Reminder</string>
+    <string name="daily_reminder_desc">Get a daily reminder to check your habits</string>
+    <string name="dark">Dark</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="day">Day</string>
+    <string name="days">days</string>
+    <string name="delete">Delete</string>
+    <string name="description">Description</string>
+    <string name="edit_habit">Edit Habit</string>
+    <string name="global_reminder_text">You have %1$d habits waiting for you today.</string>
+    <string name="global_reminder_title">Time to check your habits! 📋</string>
+    <string name="habit_name">Habit Name</string>
+    <string name="habit_reminder_text">Don\'t forget to complete this habit today!</string>
+    <string name="habit_reminder_title">Reminder: %1$s</string>
+    <string name="habits">Habits</string>
+    <string name="icon">Icon</string>
+    <string name="light">Light</string>
+    <string name="longest_streak">Longest Streak</string>
+    <string name="month">Month</string>
+    <string name="no_data">No data available yet</string>
+    <string name="no_habits_yet">No habits yet.\nTap + to create your first habit!</string>
+    <string name="notification_channel_desc">Notifications for habit reminders</string>
+    <string name="notification_channel_name">Habit Reminders</string>
+    <string name="reminder">Reminder</string>
+    <string name="save">Save</string>
+    <string name="set_reminder">Set Reminder</string>
+    <string name="settings">Settings</string>
+    <string name="statistics">Statistics</string>
+    <string name="streak">Streak</string>
+    <string name="system_default">System Default</string>
+    <string name="today">Today</string>
+    <string name="total_completions">Total Completions</string>
+    <string name="version">Version %1$s</string>
+    <string name="week">Week</string>
+    <string name="year">Year</string>
+    <style name="Theme.HabitFlow" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

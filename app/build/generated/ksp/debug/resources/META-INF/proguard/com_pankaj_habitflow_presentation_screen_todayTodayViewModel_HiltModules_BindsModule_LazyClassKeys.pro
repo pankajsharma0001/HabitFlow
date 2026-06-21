@@ -1,0 +1,9 @@
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.AddEditHabitViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.AddEditHabitViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.HabitsViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.habits.HabitsViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.settings.SettingsViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.settings.SettingsViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.stats.StatsViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.stats.StatsViewModel
+-keep,allowobfuscation,allowshrinking class com.pankaj.habitflow.presentation.screen.today.TodayViewModel
