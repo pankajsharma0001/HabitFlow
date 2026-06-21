@@ -76,4 +76,61 @@ class AlarmScheduler @Inject constructor(
             Log.d("AlarmScheduler", "Alarm cancelled for habit $habitId")
         }
     }
+
+    fun scheduleEveningReminder(reminderTimeMinutes: Int) {
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            putExtra("IS_EVENING_REMINDER", true)
+            putExtra("REMINDER_MINUTES", reminderTimeMinutes)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            "evening_reminder".hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, reminderTimeMinutes / 60)
+            set(Calendar.MINUTE, reminderTimeMinutes % 60)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                pendingIntent
+            )
+        } else {
+            alarmManager.setExact(
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                pendingIntent
+            )
+        }
+        Log.d("AlarmScheduler", "Evening reminder scheduled at ${calendar.time}")
+    }
+
+    fun cancelEveningReminder() {
+        val intent = Intent(context, ReminderReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            "evening_reminder".hashCode(),
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+            Log.d("AlarmScheduler", "Evening reminder cancelled")
+        }
+    }
 }

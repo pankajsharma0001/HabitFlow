@@ -4,10 +4,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.pankaj.habitflow.data.local.ThemePreferences
 import com.pankaj.habitflow.data.local.dao.HabitDao
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +21,9 @@ class BootReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
+
+    @Inject
+    lateinit var themePreferences: ThemePreferences
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
@@ -39,6 +44,11 @@ class BootReceiver : BroadcastReceiver() {
                                 reminderTimeMinutes = minutes
                             )
                         }
+                    }
+
+                    val eveningReminderEnabled = themePreferences.eveningReminderFlow.first()
+                    if (eveningReminderEnabled) {
+                        alarmScheduler.scheduleEveningReminder(1200)
                     }
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error rescheduling alarms", e)
