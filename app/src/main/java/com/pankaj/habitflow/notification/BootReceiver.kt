@@ -48,7 +48,8 @@ class BootReceiver : BroadcastReceiver() {
 
                     val eveningReminderEnabled = themePreferences.eveningReminderFlow.first()
                     if (eveningReminderEnabled) {
-                        alarmScheduler.scheduleEveningReminder(1200)
+                        val minutes = themePreferences.eveningReminderTimeFlow.first()
+                        alarmScheduler.scheduleEveningReminder(minutes)
                     }
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error rescheduling alarms", e)

@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.pankaj.habitflow.presentation.theme.ThemeMode
@@ -22,6 +23,7 @@ class ThemePreferences @Inject constructor(
 ) {
     private val themeKey = stringPreferencesKey("theme_mode")
     private val eveningReminderKey = booleanPreferencesKey("evening_reminder_enabled")
+    private val eveningTimeKey = intPreferencesKey("evening_reminder_time")
 
     val themeModeFlow: Flow<ThemeMode> = context.dataStore.data.map { preferences ->
         val name = preferences[themeKey] ?: ThemeMode.SYSTEM.name
@@ -36,6 +38,10 @@ class ThemePreferences @Inject constructor(
         preferences[eveningReminderKey] ?: false
     }
 
+    val eveningReminderTimeFlow: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[eveningTimeKey] ?: 1200
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { preferences ->
             preferences[themeKey] = mode.name
@@ -45,6 +51,12 @@ class ThemePreferences @Inject constructor(
     suspend fun setEveningReminderEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[eveningReminderKey] = enabled
+        }
+    }
+
+    suspend fun setEveningReminderTime(timeMinutes: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[eveningTimeKey] = timeMinutes
         }
     }
 }

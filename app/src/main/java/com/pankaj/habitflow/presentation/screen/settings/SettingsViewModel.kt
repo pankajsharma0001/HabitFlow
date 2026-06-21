@@ -32,6 +32,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val eveningReminderTime: StateFlow<Int> = themePreferences.eveningReminderTimeFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 1200
+        )
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             themePreferences.setThemeMode(mode)
@@ -42,9 +49,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             themePreferences.setEveningReminderEnabled(enabled)
             if (enabled) {
-                alarmScheduler.scheduleEveningReminder(1200)
+                alarmScheduler.scheduleEveningReminder(eveningReminderTime.value)
             } else {
                 alarmScheduler.cancelEveningReminder()
+            }
+        }
+    }
+
+    fun setEveningReminderTime(timeMinutes: Int) {
+        viewModelScope.launch {
+            themePreferences.setEveningReminderTime(timeMinutes)
+            if (eveningReminderEnabled.value) {
+                alarmScheduler.scheduleEveningReminder(timeMinutes)
             }
         }
     }

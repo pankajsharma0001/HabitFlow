@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import android.app.TimePickerDialog
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,9 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pankaj.habitflow.presentation.theme.ThemeMode
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +53,8 @@ fun SettingsScreen(
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val eveningReminderEnabled by viewModel.eveningReminderEnabled.collectAsState()
+    val eveningReminderTime by viewModel.eveningReminderTime.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -139,12 +146,16 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Evening Reminder (8:00 PM)",
+                            text = "Evening Reminder",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                        val hour = eveningReminderTime / 60
+                        val minute = eveningReminderTime % 60
+                        val formattedTime = LocalTime.of(hour, minute)
+                            .format(DateTimeFormatter.ofPattern("hh:mm a"))
                         Text(
-                            text = "Notify if any habits are still incomplete",
+                            text = "Notify at $formattedTime if any habits are still incomplete",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -153,6 +164,41 @@ fun SettingsScreen(
                         checked = eveningReminderEnabled,
                         onCheckedChange = { viewModel.setEveningReminderEnabled(it) }
                     )
+                }
+
+                if (eveningReminderEnabled) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val currentHour = eveningReminderTime / 60
+                                val currentMinute = eveningReminderTime % 60
+                                TimePickerDialog(
+                                    context,
+                                    { _, selectedHour, selectedMinute ->
+                                        viewModel.setEveningReminderTime(selectedHour * 60 + selectedMinute)
+                                    },
+                                    currentHour,
+                                    currentMinute,
+                                    false
+                                ).show()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Set Time",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Change reminder time",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 HorizontalDivider(
