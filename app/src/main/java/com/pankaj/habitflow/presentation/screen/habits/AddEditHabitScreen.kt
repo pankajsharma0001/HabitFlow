@@ -1,6 +1,12 @@
 package com.pankaj.habitflow.presentation.screen.habits
 
 import android.app.TimePickerDialog
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -72,6 +78,14 @@ fun AddEditHabitScreen(
     val category by viewModel.category.collectAsState()
     val colorHex by viewModel.colorHex.collectAsState()
     val reminderTime by viewModel.reminderTime.collectAsState()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.onReminderTimeChange(LocalTime.of(8, 0))
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -212,20 +226,28 @@ fun AddEditHabitScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     habitColors.forEach { color ->
-                        val hex = String.format("#%06X", 0xFFFFFF and color.value.toInt())
+                        val red = (color.red * 255f).coerceIn(0f, 255f).toInt()
+                        val green = (color.green * 255f).coerceIn(0f, 255f).toInt()
+                        val blue = (color.blue * 255f).coerceIn(0f, 255f).toInt()
+                        val hex = String.format("#%02X%02X%02X", red, green, blue)
                         val isSelected = colorHex.lowercase() == hex.lowercase()
 
+                        val baseModifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .clickable { viewModel.onColorChange(hex) }
+
                         Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .border(
-                                    width = if (isSelected) 3.dp else 0.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
+                            modifier = if (isSelected) {
+                                baseModifier.border(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     shape = CircleShape
                                 )
-                                .clickable { viewModel.onColorChange(hex) }
+                            } else {
+                                baseModifier
+                            }
                         )
                     }
                 }
@@ -277,7 +299,19 @@ fun AddEditHabitScreen(
                         checked = reminderTime != null,
                         onCheckedChange = { checked ->
                             if (checked) {
-                                viewModel.onReminderTimeChange(LocalTime.of(8, 0))
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    if (hasPermission) {
+                                        viewModel.onReminderTimeChange(LocalTime.of(8, 0))
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                } else {
+                                    viewModel.onReminderTimeChange(LocalTime.of(8, 0))
+                                }
                             } else {
                                 viewModel.onReminderTimeChange(null)
                             }

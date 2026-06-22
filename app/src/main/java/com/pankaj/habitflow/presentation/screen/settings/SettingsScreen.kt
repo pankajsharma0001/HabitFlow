@@ -14,6 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import android.app.TimePickerDialog
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -55,6 +61,14 @@ fun SettingsScreen(
     val eveningReminderEnabled by viewModel.eveningReminderEnabled.collectAsState()
     val eveningReminderTime by viewModel.eveningReminderTime.collectAsState()
     val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.setEveningReminderEnabled(true)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -162,7 +176,25 @@ fun SettingsScreen(
                     }
                     Switch(
                         checked = eveningReminderEnabled,
-                        onCheckedChange = { viewModel.setEveningReminderEnabled(it) }
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    if (hasPermission) {
+                                        viewModel.setEveningReminderEnabled(true)
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                } else {
+                                    viewModel.setEveningReminderEnabled(true)
+                                }
+                            } else {
+                                viewModel.setEveningReminderEnabled(false)
+                            }
+                        }
                     )
                 }
 
