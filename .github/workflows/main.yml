@@ -21,7 +21,7 @@ jobs:
       - name: Generate Keystore
         run: |
           keytool -genkey -v \
-            -keystore keystore.jks \
+            -keystore ${{ github.workspace }}/keystore.jks \
             -alias habitflow \
             -keyalg RSA \
             -keysize 2048 \
@@ -45,4 +45,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: HabitFlow-release
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/app-release.apk
