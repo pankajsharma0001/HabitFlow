@@ -55,12 +55,29 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val completeIntent = Intent(context, ReminderReceiver::class.java).apply {
+            action = "com.pankaj.habitflow.ACTION_MARK_COMPLETE"
+            putExtra("HABIT_ID", habitId)
+            putExtra("NOTIFICATION_ID", habitId.hashCode())
+        }
+        val completePendingIntent = PendingIntent.getBroadcast(
+            context,
+            habitId.hashCode() + 1,
+            completeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("Time for $habitName! 💪")
             .setContentText(habitDesc.ifEmpty { "Keep up your daily streak." })
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(clickPendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_save,
+                "Mark Completed",
+                completePendingIntent
+            )
             .setAutoCancel(true)
             .build()
 

@@ -1,5 +1,6 @@
 package com.pankaj.habitflow.notification
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -25,6 +26,33 @@ class ReminderReceiver : BroadcastReceiver() {
     lateinit var repository: HabitRepository
 
     override fun onReceive(context: Context, intent: Intent) {
+        val action = intent.action
+        if (action == "com.pankaj.habitflow.ACTION_MARK_COMPLETE") {
+            val habitId = intent.getStringExtra("HABIT_ID") ?: return
+            val notificationId = intent.getIntExtra("NOTIFICATION_ID", -1)
+
+            Log.d("ReminderReceiver", "Mark completed action triggered for habit $habitId")
+
+            val pendingResult = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val today = LocalDate.now()
+                    val isCompleted = repository.isHabitCompletedOn(habitId, today)
+                    if (!isCompleted) {
+                        repository.toggleHabitCompletion(habitId, today)
+                    }
+                    
+                    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.cancel(notificationId)
+                } catch (e: Exception) {
+                    Log.e("ReminderReceiver", "Error marking habit completed from notification", e)
+                } finally {
+                    pendingResult.finish()
+                }
+            }
+            return
+        }
+
         val isEvening = intent.getBooleanExtra("IS_EVENING_REMINDER", false)
         val reminderMinutes = intent.getIntExtra("REMINDER_MINUTES", -1)
 
