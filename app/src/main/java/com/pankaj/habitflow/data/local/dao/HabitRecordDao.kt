@@ -90,6 +90,18 @@ interface HabitRecordDao {
         WHERE habitId = :habitId AND date = :date
     """)
     suspend fun softDeleteRecord(habitId: String, date: String, now: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM habit_records WHERE syncStatus != 'SYNCED'")
+    suspend fun getPendingRecords(): List<HabitRecordEntity>
+
+    @Query("UPDATE habit_records SET syncStatus = 'SYNCED' WHERE id = :recordId")
+    suspend fun markSynced(recordId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertRecord(record: HabitRecordEntity)
+
+    @Query("DELETE FROM habit_records WHERE id = :recordId")
+    suspend fun hardDeleteRecord(recordId: String)
 }
 
 /**

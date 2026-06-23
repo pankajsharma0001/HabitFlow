@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.pankaj.habitflow.presentation.theme.ThemeMode
@@ -24,6 +25,8 @@ class ThemePreferences @Inject constructor(
     private val themeKey = stringPreferencesKey("theme_mode")
     private val eveningReminderKey = booleanPreferencesKey("evening_reminder_enabled")
     private val eveningTimeKey = intPreferencesKey("evening_reminder_time")
+    private val syncEnabledKey = booleanPreferencesKey("sync_enabled")
+    private val lastSyncKey = longPreferencesKey("last_sync_timestamp")
 
     val themeModeFlow: Flow<ThemeMode> = context.dataStore.data.map { preferences ->
         val name = preferences[themeKey] ?: ThemeMode.SYSTEM.name
@@ -42,6 +45,14 @@ class ThemePreferences @Inject constructor(
         preferences[eveningTimeKey] ?: 1200
     }
 
+    val syncEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[syncEnabledKey] ?: false
+    }
+
+    val lastSyncTimestampFlow: Flow<Long> = context.dataStore.data.map { preferences ->
+        preferences[lastSyncKey] ?: 0L
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { preferences ->
             preferences[themeKey] = mode.name
@@ -57,6 +68,18 @@ class ThemePreferences @Inject constructor(
     suspend fun setEveningReminderTime(timeMinutes: Int) {
         context.dataStore.edit { preferences ->
             preferences[eveningTimeKey] = timeMinutes
+        }
+    }
+
+    suspend fun setSyncEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[syncEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setLastSyncTimestamp(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[lastSyncKey] = timestamp
         }
     }
 }

@@ -56,4 +56,13 @@ interface HabitDao {
 
     @Query("DELETE FROM habits WHERE id = :habitId")
     suspend fun hardDeleteHabit(habitId: String)
+
+    @Query("SELECT * FROM habits WHERE syncStatus != 'SYNCED'")
+    suspend fun getPendingHabits(): List<HabitEntity>
+
+    @Query("UPDATE habits SET syncStatus = 'SYNCED' WHERE id = :habitId")
+    suspend fun markSynced(habitId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertHabit(habit: HabitEntity)
 }

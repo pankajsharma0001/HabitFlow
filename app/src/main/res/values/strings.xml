@@ -48,4 +48,5 @@
     <string name="total_completions">Total Completions</string>
     <string name="average_rate">Average Rate</string>
     <string name="no_data">No data available yet</string>
+    <string name="default_web_client_id">160875089520-9137kf84hqrdpog7p3e2fmfkdk11q4i3.apps.googleusercontent.com</string>
 </resources>
