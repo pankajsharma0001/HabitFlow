@@ -44,6 +44,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- App Widget (Glance) -->
+        <receiver
+            android:name=".widget.HabitFlowWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_info" />
+        </receiver>
+
         <!-- Disable default WorkManager Initializer for Hilt WorkManager custom configuration -->
         <provider
             android:name="androidx.startup.InitializationProvider"

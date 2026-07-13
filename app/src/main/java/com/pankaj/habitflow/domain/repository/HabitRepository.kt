@@ -2,6 +2,7 @@ package com.pankaj.habitflow.domain.repository
 
 import com.pankaj.habitflow.domain.model.DayStats
 import com.pankaj.habitflow.domain.model.Habit
+import com.pankaj.habitflow.domain.model.HabitCompletionRecord
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -27,7 +28,11 @@ interface HabitRepository {
         category: String,
         colorHex: String,
         iconName: String,
-        reminderTimeMinutes: Int?   // minutes from midnight, null = no reminder
+        reminderTimeMinutes: Int?,   // minutes from midnight, null = no reminder
+        frequencyType: String = "DAILY",
+        frequencyDays: String? = null,
+        sortOrder: Int = 0,
+        timeOfDay: String = "ANYTIME"
     ): String                       // returns the new habit ID
 
     suspend fun updateHabit(
@@ -37,7 +42,11 @@ interface HabitRepository {
         category: String,
         colorHex: String,
         iconName: String,
-        reminderTimeMinutes: Int?
+        reminderTimeMinutes: Int?,
+        frequencyType: String = "DAILY",
+        frequencyDays: String? = null,
+        sortOrder: Int = 0,
+        timeOfDay: String = "ANYTIME"
     )
 
     suspend fun archiveHabit(habitId: String)
@@ -48,11 +57,19 @@ interface HabitRepository {
 
     // ── Habit Records (daily check-ins) ─────────────────────
 
-    suspend fun toggleHabitCompletion(habitId: String, date: LocalDate)
+    suspend fun toggleHabitCompletion(habitId: String, date: LocalDate, note: String? = null)
 
     suspend fun isHabitCompletedOn(habitId: String, date: LocalDate): Boolean
 
     fun getCompletedHabitIdsForDateFlow(date: LocalDate): Flow<Set<String>>
+
+    suspend fun getCompletionNote(habitId: String, date: LocalDate): String?
+
+    suspend fun updateCompletionNote(habitId: String, date: LocalDate, note: String?)
+
+    suspend fun updateHabitsOrder(orderedIds: List<String>)
+
+    fun getCompletionRecordsFlow(habitId: String): Flow<List<HabitCompletionRecord>>
 
     // ── Statistics ──────────────────────────────────────────
 
@@ -82,4 +99,6 @@ interface HabitRepository {
      * Returns the count of active (non-archived) habits.
      */
     suspend fun getActiveHabitCount(): Int
+
+    suspend fun exportDataAsJson(): String
 }

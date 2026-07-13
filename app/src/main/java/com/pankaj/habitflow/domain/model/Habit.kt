@@ -20,5 +20,10 @@ data class Habit(
     val completionRate: Float,
     val isCompletedToday: Boolean,
     val isArchived: Boolean,
-    val createdAtMillis: Long
+    val createdAtMillis: Long,
+    val frequencyType: String = "DAILY",
+    val frequencyDays: List<Int> = emptyList(),
+    val sortOrder: Int = 0,
+    val timeOfDay: String = "ANYTIME",
+    val noteToday: String? = null
 )

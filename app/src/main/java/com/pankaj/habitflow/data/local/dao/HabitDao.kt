@@ -13,10 +13,10 @@ interface HabitDao {
 
     // ── Queries ─────────────────────────────────────────────
 
-    @Query("SELECT * FROM habits WHERE syncStatus != 'PENDING_DELETE' ORDER BY createdAt DESC")
+    @Query("SELECT * FROM habits WHERE syncStatus != 'PENDING_DELETE' ORDER BY sortOrder ASC, createdAt DESC")
     fun getAllHabitsFlow(): Flow<List<HabitEntity>>
 
-    @Query("SELECT * FROM habits WHERE isArchived = 0 AND syncStatus != 'PENDING_DELETE' ORDER BY createdAt DESC")
+    @Query("SELECT * FROM habits WHERE isArchived = 0 AND syncStatus != 'PENDING_DELETE' ORDER BY sortOrder ASC, createdAt DESC")
     fun getActiveHabitsFlow(): Flow<List<HabitEntity>>
 
     @Query("SELECT * FROM habits WHERE id = :habitId AND syncStatus != 'PENDING_DELETE'")

@@ -49,4 +49,8 @@
     <string name="average_rate">Average Rate</string>
     <string name="no_data">No data available yet</string>
     <string name="default_web_client_id">160875089520-9137kf84hqrdpog7p3e2fmfkdk11q4i3.apps.googleusercontent.com</string>
+    <string name="widget_description">Track your daily habits right from the home screen</string>
+    <string name="weekly_summary_channel_name">Weekly Summary</string>
+    <string name="weekly_summary_channel_desc">Weekly habit performance summary every Sunday</string>
+    <string name="widget_name">HabitFlow Today</string>
 </resources>

@@ -40,4 +40,10 @@ class HabitsViewModel @Inject constructor(
             repository.deleteHabit(habitId)
         }
     }
+
+    fun updateHabitsOrder(orderedIds: List<String>) {
+        viewModelScope.launch {
+            repository.updateHabitsOrder(orderedIds)
+        }
+    }
 }

@@ -255,6 +255,123 @@ fun AddEditHabitScreen(
                 }
             }
 
+            // Frequency Selection
+            Text(
+                text = "Frequency",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+
+            val freqType by viewModel.frequencyType.collectAsState()
+            val freqDays by viewModel.frequencyDays.collectAsState()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("DAILY" to "Daily", "CUSTOM_DAYS" to "Specific Days").forEach { (typeKey, typeLabel) ->
+                    val isSelected = freqType == typeKey
+                    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(containerColor)
+                            .clickable { viewModel.onFrequencyTypeChange(typeKey) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = typeLabel,
+                            color = textColor,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            if (freqType == "CUSTOM_DAYS") {
+                val daysOfWeek = listOf("M", "T", "W", "T", "F", "S", "S")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    daysOfWeek.forEachIndexed { index, dayLetter ->
+                        val dayVal = index + 1
+                        val isSelected = freqDays.contains(dayVal)
+                        val circleColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(circleColor)
+                                .clickable {
+                                    val newDays = if (isSelected) {
+                                        freqDays - dayVal
+                                    } else {
+                                        freqDays + dayVal
+                                    }
+                                    viewModel.onFrequencyDaysChange(newDays)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = dayLetter,
+                                color = textColor,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Time of Day Selection
+            Text(
+                text = "Time of Day",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+
+            val selectedTimeOfDay by viewModel.timeOfDay.collectAsState()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    "ANYTIME" to "Anytime",
+                    "MORNING" to "Morning",
+                    "AFTERNOON" to "Afternoon",
+                    "EVENING" to "Evening"
+                ).forEach { (timeKey, timeLabel) ->
+                    val isSelected = selectedTimeOfDay == timeKey
+                    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(containerColor)
+                            .clickable { viewModel.onTimeOfDayChange(timeKey) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = timeLabel,
+                            color = textColor,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+
             // Reminder Time Picker
             Text(
                 text = "Reminder",

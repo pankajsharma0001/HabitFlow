@@ -34,6 +34,7 @@ data class HabitRecordEntity(
     val date: String,               // ISO format "yyyy-MM-dd"
     val isCompleted: Boolean = true,
     val completedAt: Long? = null,
+    val note: String? = null,
     val syncStatus: String = SyncStatus.PENDING_INSERT.name,
     val lastModified: Long = System.currentTimeMillis()
 )

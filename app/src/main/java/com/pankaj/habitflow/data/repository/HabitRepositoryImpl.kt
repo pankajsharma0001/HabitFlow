@@ -8,6 +8,7 @@ import com.pankaj.habitflow.domain.model.DayStats
 import com.pankaj.habitflow.domain.model.Habit
 import com.pankaj.habitflow.domain.model.HabitCategory
 import com.pankaj.habitflow.domain.model.SyncStatus
+import com.pankaj.habitflow.domain.model.HabitCompletionRecord
 import com.pankaj.habitflow.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -74,7 +75,11 @@ class HabitRepositoryImpl @Inject constructor(
         category: String,
         colorHex: String,
         iconName: String,
-        reminderTimeMinutes: Int?
+        reminderTimeMinutes: Int?,
+        frequencyType: String,
+        frequencyDays: String?,
+        sortOrder: Int,
+        timeOfDay: String
     ): String {
         val id = UUID.randomUUID().toString()
         val entity = HabitEntity(
@@ -86,6 +91,10 @@ class HabitRepositoryImpl @Inject constructor(
             iconName = iconName,
             reminderTimeMinutes = reminderTimeMinutes,
             createdAt = System.currentTimeMillis(),
+            frequencyType = frequencyType,
+            frequencyDays = frequencyDays,
+            sortOrder = sortOrder,
+            timeOfDay = timeOfDay,
             syncStatus = SyncStatus.PENDING_INSERT.name
         )
         habitDao.insertHabit(entity)
@@ -104,7 +113,11 @@ class HabitRepositoryImpl @Inject constructor(
         category: String,
         colorHex: String,
         iconName: String,
-        reminderTimeMinutes: Int?
+        reminderTimeMinutes: Int?,
+        frequencyType: String,
+        frequencyDays: String?,
+        sortOrder: Int,
+        timeOfDay: String
     ) {
         val existing = habitDao.getHabitById(habitId) ?: return
         val updated = existing.copy(
@@ -114,6 +127,10 @@ class HabitRepositoryImpl @Inject constructor(
             colorHex = colorHex,
             iconName = iconName,
             reminderTimeMinutes = reminderTimeMinutes,
+            frequencyType = frequencyType,
+            frequencyDays = frequencyDays,
+            sortOrder = sortOrder,
+            timeOfDay = timeOfDay,
             lastModified = System.currentTimeMillis(),
             syncStatus = if (existing.syncStatus == SyncStatus.PENDING_INSERT.name)
                 SyncStatus.PENDING_INSERT.name
@@ -152,7 +169,7 @@ class HabitRepositoryImpl @Inject constructor(
 
     // ── Habit Records ───────────────────────────────────────
 
-    override suspend fun toggleHabitCompletion(habitId: String, date: LocalDate) {
+    override suspend fun toggleHabitCompletion(habitId: String, date: LocalDate, note: String?) {
         val dateStr = date.format(dateFormatter)
         val existing = recordDao.getRecord(habitId, dateStr)
         if (existing != null) {
@@ -164,6 +181,7 @@ class HabitRepositoryImpl @Inject constructor(
                     existing.copy(
                         isCompleted = true,
                         completedAt = System.currentTimeMillis(),
+                        note = note,
                         lastModified = System.currentTimeMillis(),
                         syncStatus = SyncStatus.PENDING_UPDATE.name
                     )
@@ -178,9 +196,62 @@ class HabitRepositoryImpl @Inject constructor(
                     date = dateStr,
                     isCompleted = true,
                     completedAt = System.currentTimeMillis(),
+                    note = note,
                     syncStatus = SyncStatus.PENDING_INSERT.name
                 )
             )
+        }
+    }
+
+    override suspend fun getCompletionNote(habitId: String, date: LocalDate): String? {
+        val dateStr = date.format(dateFormatter)
+        return recordDao.getRecord(habitId, dateStr)?.note
+    }
+
+    override suspend fun updateCompletionNote(habitId: String, date: LocalDate, note: String?) {
+        val dateStr = date.format(dateFormatter)
+        val existing = recordDao.getRecord(habitId, dateStr)
+        if (existing != null) {
+            recordDao.insertRecord(
+                existing.copy(
+                    note = note,
+                    lastModified = System.currentTimeMillis(),
+                    syncStatus = if (existing.syncStatus == SyncStatus.PENDING_INSERT.name)
+                        SyncStatus.PENDING_INSERT.name
+                    else SyncStatus.PENDING_UPDATE.name
+                )
+            )
+        }
+    }
+
+    override suspend fun updateHabitsOrder(orderedIds: List<String>) {
+        orderedIds.forEachIndexed { index, habitId ->
+            val habit = habitDao.getHabitById(habitId)
+            if (habit != null) {
+                habitDao.updateHabit(
+                    habit.copy(
+                        sortOrder = index,
+                        lastModified = System.currentTimeMillis(),
+                        syncStatus = if (habit.syncStatus == SyncStatus.PENDING_INSERT.name)
+                            SyncStatus.PENDING_INSERT.name
+                        else SyncStatus.PENDING_UPDATE.name
+                    )
+                )
+            }
+        }
+    }
+
+    override fun getCompletionRecordsFlow(habitId: String): Flow<List<HabitCompletionRecord>> {
+        return recordDao.getCompletedRecordsForHabitFlow(habitId).map { list ->
+            list.map { entity ->
+                HabitCompletionRecord(
+                    id = entity.id,
+                    habitId = entity.habitId,
+                    date = LocalDate.parse(entity.date, dateFormatter),
+                    completedAtMillis = entity.completedAt,
+                    note = entity.note
+                )
+            }
         }
     }
 
@@ -353,6 +424,54 @@ class HabitRepositoryImpl @Inject constructor(
         return habitDao.getActiveHabitCount()
     }
 
+    override suspend fun exportDataAsJson(): String {
+        val habits = habitDao.getAllHabits()
+        val records = recordDao.getAllRecords()
+
+        val jsonBuilder = StringBuilder()
+        jsonBuilder.append("{\n")
+        jsonBuilder.append("  \"version\": 1,\n")
+        jsonBuilder.append("  \"exportedAt\": ${System.currentTimeMillis()},\n")
+        
+        // Serialize Habits
+        jsonBuilder.append("  \"habits\": [\n")
+        habits.forEachIndexed { i, h ->
+            jsonBuilder.append("    {\n")
+            jsonBuilder.append("      \"id\": \"${h.id}\",\n")
+            jsonBuilder.append("      \"name\": \"${h.name.replace("\"", "\\\"")}\",\n")
+            jsonBuilder.append("      \"description\": \"${h.description.replace("\"", "\\\"")}\",\n")
+            jsonBuilder.append("      \"category\": \"${h.category}\",\n")
+            jsonBuilder.append("      \"colorHex\": \"${h.colorHex}\",\n")
+            jsonBuilder.append("      \"iconName\": \"${h.iconName}\",\n")
+            jsonBuilder.append("      \"reminderTimeMinutes\": ${h.reminderTimeMinutes},\n")
+            jsonBuilder.append("      \"frequencyType\": \"${h.frequencyType}\",\n")
+            jsonBuilder.append("      \"frequencyDays\": ${h.frequencyDays?.let { "\"$it\"" } ?: "null"},\n")
+            jsonBuilder.append("      \"sortOrder\": ${h.sortOrder},\n")
+            jsonBuilder.append("      \"timeOfDay\": \"${h.timeOfDay}\",\n")
+            jsonBuilder.append("      \"createdAt\": ${h.createdAt},\n")
+            jsonBuilder.append("      \"isArchived\": ${h.isArchived}\n")
+            jsonBuilder.append("    }${if (i < habits.size - 1) "," else ""}\n")
+        }
+        jsonBuilder.append("  ],\n")
+
+        // Serialize Records
+        jsonBuilder.append("  \"records\": [\n")
+        records.forEachIndexed { i, r ->
+            jsonBuilder.append("    {\n")
+            jsonBuilder.append("      \"id\": \"${r.id}\",\n")
+            jsonBuilder.append("      \"habitId\": \"${r.habitId}\",\n")
+            jsonBuilder.append("      \"date\": \"${r.date}\",\n")
+            jsonBuilder.append("      \"isCompleted\": ${r.isCompleted},\n")
+            jsonBuilder.append("      \"completedAt\": ${r.completedAt},\n")
+            jsonBuilder.append("      \"note\": ${r.note?.let { "\"${it.replace("\"", "\\\"")}\"" } ?: "null"}\n")
+            jsonBuilder.append("    }${if (i < records.size - 1) "," else ""}\n")
+        }
+        jsonBuilder.append("  ]\n")
+        jsonBuilder.append("}")
+
+        return jsonBuilder.toString()
+    }
+
     // ── Mapping ─────────────────────────────────────────────
 
     private suspend fun mapToHabit(entity: HabitEntity, completedTodayIds: Set<String>): Habit {
@@ -360,6 +479,8 @@ class HabitRepositoryImpl @Inject constructor(
         val longestStreak = getLongestStreak(entity.id)
         val totalCompletions = getTotalCompletions(entity.id)
         val completionRate = getCompletionRate(entity.id)
+        val todayStr = LocalDate.now().format(dateFormatter)
+        val note = recordDao.getRecord(entity.id, todayStr)?.note
 
         return Habit(
             id = entity.id,
@@ -377,7 +498,12 @@ class HabitRepositoryImpl @Inject constructor(
             completionRate = completionRate,
             isCompletedToday = entity.id in completedTodayIds,
             isArchived = entity.isArchived,
-            createdAtMillis = entity.createdAt
+            createdAtMillis = entity.createdAt,
+            frequencyType = entity.frequencyType,
+            frequencyDays = entity.frequencyDays?.split(",")?.mapNotNull { it.toIntOrNull() } ?: emptyList(),
+            sortOrder = entity.sortOrder,
+            timeOfDay = entity.timeOfDay,
+            noteToday = note
         )
     }
 }

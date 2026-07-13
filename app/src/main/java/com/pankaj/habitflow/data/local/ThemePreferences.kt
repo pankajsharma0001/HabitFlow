@@ -27,6 +27,7 @@ class ThemePreferences @Inject constructor(
     private val eveningTimeKey = intPreferencesKey("evening_reminder_time")
     private val syncEnabledKey = booleanPreferencesKey("sync_enabled")
     private val lastSyncKey = longPreferencesKey("last_sync_timestamp")
+    private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
 
     val themeModeFlow: Flow<ThemeMode> = context.dataStore.data.map { preferences ->
         val name = preferences[themeKey] ?: ThemeMode.SYSTEM.name
@@ -51,6 +52,10 @@ class ThemePreferences @Inject constructor(
 
     val lastSyncTimestampFlow: Flow<Long> = context.dataStore.data.map { preferences ->
         preferences[lastSyncKey] ?: 0L
+    }
+
+    val onboardingCompletedFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[onboardingCompletedKey] ?: false
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -80,6 +85,12 @@ class ThemePreferences @Inject constructor(
     suspend fun setLastSyncTimestamp(timestamp: Long) {
         context.dataStore.edit { preferences ->
             preferences[lastSyncKey] = timestamp
+        }
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[onboardingCompletedKey] = completed
         }
     }
 }

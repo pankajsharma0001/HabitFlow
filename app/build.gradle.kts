@@ -119,6 +119,10 @@ dependencies {
     // Google Fonts
     implementation(libs.compose.google.fonts)
 
+    // Glance App Widget
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+
     // Firebase & Auth (Google Sign-In)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

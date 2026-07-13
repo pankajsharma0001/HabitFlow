@@ -1,5 +1,6 @@
 package com.pankaj.habitflow.presentation.screen.today
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,6 +47,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import com.pankaj.habitflow.presentation.components.ConfettiCelebration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +73,16 @@ fun TodayScreen(
     val habits by viewModel.habits.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val stats by viewModel.dayStats.collectAsState()
+
+    var triggerConfetti by remember { mutableStateOf(false) }
+    var previousCompletionRate by remember { mutableStateOf(stats.completionRate) }
+
+    LaunchedEffect(stats) {
+        if (stats.completionRate >= 1.0f && stats.totalHabits > 0 && previousCompletionRate < 1.0f) {
+            triggerConfetti = true
+        }
+        previousCompletionRate = stats.completionRate
+    }
 
     val dateText = when (selectedDate) {
         LocalDate.now() -> "Today"
@@ -100,165 +125,285 @@ fun TodayScreen(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Date Navigation Controller
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
             ) {
-                IconButton(onClick = { viewModel.moveToPreviousDay() }) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronLeft,
-                        contentDescription = "Previous Day",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Text(
-                    text = dateText,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                IconButton(onClick = { viewModel.moveToNextDay() }) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Next Day",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            // Completion Progress Banner
-            if (stats.totalHabits > 0) {
-                Card(
+                // Date Navigation Controller
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            val greeting = when {
-                                stats.completionRate >= 1.0f -> "Perfect Day! 🎉"
-                                stats.completionRate >= 0.75f -> "Awesome work! 🔥"
-                                stats.completionRate >= 0.5f -> "Over halfway there! 👍"
-                                stats.completionRate > 0f -> "Keep making progress!"
-                                else -> "Start your streak today!"
-                            }
-                            Text(
-                                text = greeting,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "${stats.completedHabits} of ${stats.totalHabits} habits completed",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        ProgressRing(
-                            progress = stats.completionRate,
-                            size = 80.dp,
-                            strokeWidth = 8.dp,
-                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            progressColor = MaterialTheme.colorScheme.primary
+                    IconButton(onClick = { viewModel.moveToPreviousDay() }) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronLeft,
+                            contentDescription = "Previous Day",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-            }
 
-            // Habits List
-            if (habits.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(32.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Inbox,
-                            contentDescription = "No Habits",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outlineVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No active habits for this day",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold
+                            text = dateText,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold
                             ),
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Tap + to create a new habit and start tracking.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                        if (selectedDate != LocalDate.now()) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { viewModel.selectDate(LocalDate.now()) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Today,
+                                    contentDescription = "Jump to Today",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    val isToday = selectedDate == LocalDate.now()
+                    IconButton(
+                        onClick = { if (!isToday) viewModel.moveToNextDay() },
+                        enabled = !isToday
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Next Day",
+                            tint = if (!isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                         )
-                        if (selectedDate == LocalDate.now()) {
+                    }
+                }
+
+                // Completion Progress Banner
+                if (stats.totalHabits > 0) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                val greeting = when {
+                                    stats.completionRate >= 1.0f -> "Perfect Day! 🎉"
+                                    stats.completionRate >= 0.75f -> "Awesome work! 🔥"
+                                    stats.completionRate >= 0.5f -> "Over halfway there! 👍"
+                                    stats.completionRate > 0f -> "Keep making progress!"
+                                    else -> "Start your streak today!"
+                                }
+                                Text(
+                                    text = greeting,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "${stats.completedHabits} of ${stats.totalHabits} habits completed",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            ProgressRing(
+                                progress = stats.completionRate,
+                                size = 80.dp,
+                                strokeWidth = 8.dp,
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                progressColor = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                // Habits List
+                if (habits.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inbox,
+                                contentDescription = "No Habits",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.outlineVariant
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onAddHabitClick) {
-                                Text("Create a Habit")
+                            Text(
+                                text = "No active habits for this day",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Tap + to create a new habit and start tracking.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            if (selectedDate == LocalDate.now()) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(onClick = onAddHabitClick) {
+                                    Text("Create a Habit")
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    val morningHabits = habits.filter { it.timeOfDay == "MORNING" }
+                    val afternoonHabits = habits.filter { it.timeOfDay == "AFTERNOON" }
+                    val eveningHabits = habits.filter { it.timeOfDay == "EVENING" }
+                    val anytimeHabits = habits.filter { it.timeOfDay == "ANYTIME" }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            top = 16.dp,
+                            end = 16.dp,
+                            bottom = 80.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val groups = listOf(
+                            Triple("Morning 🌅", "MORNING", morningHabits),
+                            Triple("Afternoon ☀️", "AFTERNOON", afternoonHabits),
+                            Triple("Evening 🌙", "EVENING", eveningHabits),
+                            Triple("Anytime 📅", "ANYTIME", anytimeHabits)
+                        )
+
+                        groups.forEach { (title, key, list) ->
+                            if (list.isNotEmpty()) {
+                                item(key = "header_$key") {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                }
+
+                                items(
+                                    items = list,
+                                    key = { it.id }
+                                ) { habit ->
+                                    val isToday = selectedDate == LocalDate.now()
+                                    val haptic = LocalHapticFeedback.current
+
+                                    val dismissState = rememberSwipeToDismissBoxState(
+                                        confirmValueChange = { value ->
+                                            if (isToday && value == SwipeToDismissBoxValue.StartToEnd) {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                viewModel.toggleHabit(habit.id)
+                                            }
+                                            false // Always snap back
+                                        }
+                                    )
+
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        enableDismissFromEndToStart = false,
+                                        enableDismissFromStartToEnd = isToday,
+                                        backgroundContent = {
+                                            val color =
+                                                if (habit.isCompletedToday) MaterialTheme.colorScheme.error.copy(
+                                                    alpha = 0.15f
+                                                ) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            val iconColor =
+                                                if (habit.isCompletedToday) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                            val icon =
+                                                if (habit.isCompletedToday) Icons.Default.Close else Icons.Default.Check
+                                            val text =
+                                                if (habit.isCompletedToday) "Mark Incomplete" else "Mark Complete"
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .background(color)
+                                                    .padding(horizontal = 20.dp),
+                                                contentAlignment = Alignment.CenterStart
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = icon,
+                                                        contentDescription = null,
+                                                        tint = iconColor,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                    Text(
+                                                        text = text,
+                                                        color = iconColor,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        content = {
+                                            HabitCard(
+                                                habit = habit,
+                                                onToggle = { viewModel.toggleHabit(habit.id) },
+                                                onClick = { onHabitClick(habit.id) },
+                                                enabled = isToday
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = 80.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = habits,
-                        key = { it.id }
-                    ) { habit ->
-                        HabitCard(
-                            habit = habit,
-                            onToggle = { viewModel.toggleHabit(habit.id) },
-                            onClick = { onHabitClick(habit.id) }
-                        )
-                    }
-                }
+
+                ConfettiCelebration(
+                    trigger = triggerConfetti,
+                    onAnimationEnd = { triggerConfetti = false }
+                )
             }
         }
     }

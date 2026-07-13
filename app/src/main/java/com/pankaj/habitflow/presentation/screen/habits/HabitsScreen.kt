@@ -26,6 +26,11 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Unarchive
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -71,6 +76,7 @@ fun HabitsScreen(
 
     val activeHabits = allHabits.filter { !it.isArchived }
     val archivedHabits = allHabits.filter { it.isArchived }
+    var isReorderMode by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -83,6 +89,17 @@ fun HabitsScreen(
                         ),
                         color = MaterialTheme.colorScheme.primary
                     )
+                },
+                actions = {
+                    if (selectedTab == 0 && activeHabits.isNotEmpty()) {
+                        IconButton(onClick = { isReorderMode = !isReorderMode }) {
+                            Icon(
+                                imageVector = if (isReorderMode) Icons.Default.Check else Icons.Default.SwapVert,
+                                contentDescription = if (isReorderMode) "Done Reordering" else "Reorder Habits",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 },
                 windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -121,7 +138,10 @@ fun HabitsScreen(
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        onClick = {
+                            selectedTab = index
+                            isReorderMode = false
+                        },
                         text = {
                             Text(
                                 text = title,
@@ -192,10 +212,10 @@ fun HabitsScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(
+                    itemsIndexed(
                         items = habitsToShow,
-                        key = { it.id }
-                    ) { habit ->
+                        key = { _, habit -> habit.id }
+                    ) { index, habit ->
                         HabitManagementCard(
                             habit = habit,
                             onEditClick = { onHabitClick(habit.id) },
@@ -206,7 +226,26 @@ fun HabitsScreen(
                                     viewModel.archiveHabit(habit.id)
                                 }
                             },
-                            onDeleteClick = { viewModel.deleteHabit(habit.id) }
+                            onDeleteClick = { viewModel.deleteHabit(habit.id) },
+                            reorderMode = isReorderMode,
+                            onMoveUpClick = if (index > 0) {
+                                {
+                                    val mutable = habitsToShow.toMutableList()
+                                    val temp = mutable[index]
+                                    mutable[index] = mutable[index - 1]
+                                    mutable[index - 1] = temp
+                                    viewModel.updateHabitsOrder(mutable.map { it.id })
+                                }
+                            } else null,
+                            onMoveDownClick = if (index < habitsToShow.size - 1) {
+                                {
+                                    val mutable = habitsToShow.toMutableList()
+                                    val temp = mutable[index]
+                                    mutable[index] = mutable[index + 1]
+                                    mutable[index + 1] = temp
+                                    viewModel.updateHabitsOrder(mutable.map { it.id })
+                                }
+                            } else null
                         )
                     }
                 }
@@ -221,6 +260,9 @@ fun HabitManagementCard(
     onEditClick: () -> Unit,
     onArchiveToggle: () -> Unit,
     onDeleteClick: () -> Unit,
+    reorderMode: Boolean = false,
+    onMoveUpClick: (() -> Unit)? = null,
+    onMoveDownClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val habitColor = try {
@@ -316,26 +358,49 @@ fun HabitManagementCard(
 
             // Action Buttons
             Row {
-                IconButton(onClick = onEditClick) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                IconButton(onClick = onArchiveToggle) {
-                    Icon(
-                        imageVector = if (habit.isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
-                        contentDescription = if (habit.isArchived) "Unarchive" else "Archive",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-                    )
+                if (reorderMode) {
+                    IconButton(
+                        onClick = { onMoveUpClick?.invoke() },
+                        enabled = onMoveUpClick != null
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Move Up",
+                            tint = if (onMoveUpClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                    IconButton(
+                        onClick = { onMoveDownClick?.invoke() },
+                        enabled = onMoveDownClick != null
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Move Down",
+                            tint = if (onMoveDownClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                } else {
+                    IconButton(onClick = onEditClick) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = onArchiveToggle) {
+                        Icon(
+                            imageVector = if (habit.isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
+                            contentDescription = if (habit.isArchived) "Unarchive" else "Archive",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
         }

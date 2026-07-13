@@ -42,6 +42,8 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -578,6 +580,43 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Data Management ──────────────────────────────────────
+            SettingsCard(
+                title = "Data Management",
+                icon = Icons.Default.Save
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Backup and export your habits and completion history as a JSON file.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.exportData { json ->
+                                shareJsonData(context, json)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Backup,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Export Backup JSON")
+                    }
+                }
+            }
+
             // ── About ────────────────────────────────────────────────
             SettingsCard(
                 title = "About HabitFlow",
@@ -648,5 +687,17 @@ fun SettingsCard(
             Spacer(modifier = Modifier.height(4.dp))
             content()
         }
+    }
+}
+
+private fun shareJsonData(context: android.content.Context, json: String) {
+    try {
+        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_TEXT, json)
+        }
+        context.startActivity(android.content.Intent.createChooser(shareIntent, "Export HabitFlow Backup"))
+    } catch (e: Exception) {
+        android.widget.Toast.makeText(context, "Export failed: ${e.localizedMessage}", android.widget.Toast.LENGTH_LONG).show()
     }
 }

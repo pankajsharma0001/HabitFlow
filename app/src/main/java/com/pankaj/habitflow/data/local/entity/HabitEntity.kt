@@ -20,6 +20,10 @@ data class HabitEntity(
     val reminderTimeMinutes: Int? = null,   // minutes from midnight (e.g., 480 = 8:00 AM)
     val createdAt: Long = System.currentTimeMillis(),
     val isArchived: Boolean = false,
+    val frequencyType: String = "DAILY",
+    val frequencyDays: String? = null,
+    val sortOrder: Int = 0,
+    val timeOfDay: String = "ANYTIME",
     val syncStatus: String = SyncStatus.PENDING_INSERT.name,
     val lastModified: Long = System.currentTimeMillis()
 )

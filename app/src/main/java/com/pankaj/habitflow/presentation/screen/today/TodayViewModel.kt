@@ -73,7 +73,10 @@ class TodayViewModel @Inject constructor(
     }
 
     fun moveToNextDay() {
-        _selectedDate.value = _selectedDate.value.plusDays(1)
+        val nextDate = _selectedDate.value.plusDays(1)
+        if (!nextDate.isAfter(LocalDate.now())) {
+            _selectedDate.value = nextDate
+        }
     }
 
     fun moveToPreviousDay() {

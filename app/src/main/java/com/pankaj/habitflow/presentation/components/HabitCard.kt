@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,7 +51,8 @@ fun HabitCard(
     habit: Habit,
     onToggle: () -> Unit,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val habitColor = try {
         Color(android.graphics.Color.parseColor(habit.colorHex))
@@ -159,12 +162,19 @@ fun HabitCard(
             }
 
             // Check toggle
+            val haptic = LocalHapticFeedback.current
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .scale(checkScale)
                     .clip(CircleShape)
-                    .clickable(onClick = onToggle),
+                    .then(
+                        if (enabled) Modifier.clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onToggle()
+                        }
+                        else Modifier
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -172,7 +182,8 @@ fun HabitCard(
                     else Icons.Outlined.RadioButtonUnchecked,
                     contentDescription = if (habit.isCompletedToday) "Completed" else "Not completed",
                     modifier = Modifier.size(32.dp),
-                    tint = checkColor
+                    tint = if (enabled) checkColor
+                           else checkColor.copy(alpha = 0.4f)
                 )
             }
         }

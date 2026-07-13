@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,6 +67,10 @@ fun StatsScreen(
     val avgCompletion = if (habits.isNotEmpty()) habits.map { it.completionRate }.average().toFloat() else 0f
     val bestStreak = if (habits.isNotEmpty()) habits.maxOf { it.currentStreak } else 0
     val totalCompletions = habits.sumOf { it.totalCompletions }
+
+    // Consistency Score: composite of completion rate (80%) and average streak bonus (20%)
+    val avgStreak = if (habits.isNotEmpty()) habits.map { it.currentStreak }.average().toFloat() else 0f
+    val consistencyScore = ((avgCompletion * 80f) + (avgStreak.coerceIn(0f, 5f) * 4f)).coerceIn(0f, 100f).toInt()
 
     Scaffold(
         topBar = {
@@ -170,9 +175,10 @@ fun StatsScreen(
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
-                        title = "Completion Rate",
-                        value = "${(avgCompletion * 100).toInt()}%",
-                        icon = Icons.Default.Equalizer,
+                        title = "Consistency Score",
+                        value = "$consistencyScore%",
+                        icon = Icons.Default.Star,
+                        iconTint = Color(0xFFFFD700),
                         modifier = Modifier.weight(1f)
                     )
                 }

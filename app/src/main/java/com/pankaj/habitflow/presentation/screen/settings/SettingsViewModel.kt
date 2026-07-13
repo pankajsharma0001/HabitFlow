@@ -9,6 +9,7 @@ import com.pankaj.habitflow.data.sync.SyncScheduler
 import com.pankaj.habitflow.domain.repository.AuthRepository
 import com.pankaj.habitflow.notification.AlarmScheduler
 import com.pankaj.habitflow.presentation.theme.ThemeMode
+import com.pankaj.habitflow.domain.repository.HabitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,8 @@ class SettingsViewModel @Inject constructor(
     private val themePreferences: ThemePreferences,
     private val alarmScheduler: AlarmScheduler,
     private val authRepository: AuthRepository,
-    private val syncScheduler: SyncScheduler
+    private val syncScheduler: SyncScheduler,
+    private val habitRepository: HabitRepository
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = themePreferences.themeModeFlow
@@ -66,6 +68,13 @@ class SettingsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = 0L
+        )
+
+    val onboardingCompleted: StateFlow<Boolean?> = themePreferences.onboardingCompletedFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
         )
 
     val isSyncing: StateFlow<Boolean> = combine(
@@ -148,5 +157,12 @@ class SettingsViewModel @Inject constructor(
 
     fun triggerManualSync() {
         syncScheduler.requestImmediateSync()
+    }
+
+    fun exportData(onDataExported: (String) -> Unit) {
+        viewModelScope.launch {
+            val json = habitRepository.exportDataAsJson()
+            onDataExported(json)
+        }
     }
 }

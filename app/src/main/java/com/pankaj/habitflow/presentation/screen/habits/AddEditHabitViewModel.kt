@@ -42,6 +42,15 @@ class AddEditHabitViewModel @Inject constructor(
     private val _reminderTime = MutableStateFlow<LocalTime?>(null)
     val reminderTime: StateFlow<LocalTime?> = _reminderTime.asStateFlow()
 
+    private val _frequencyType = MutableStateFlow("DAILY")
+    val frequencyType: StateFlow<String> = _frequencyType.asStateFlow()
+
+    private val _frequencyDays = MutableStateFlow<List<Int>>(emptyList())
+    val frequencyDays: StateFlow<List<Int>> = _frequencyDays.asStateFlow()
+
+    private val _timeOfDay = MutableStateFlow("ANYTIME")
+    val timeOfDay: StateFlow<String> = _timeOfDay.asStateFlow()
+
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow: SharedFlow<UiEvent> = _eventFlow.asSharedFlow()
 
@@ -61,6 +70,9 @@ class AddEditHabitViewModel @Inject constructor(
                         _colorHex.value = habit.colorHex
                         _iconName.value = habit.iconName
                         _reminderTime.value = habit.reminderTime
+                        _frequencyType.value = habit.frequencyType
+                        _frequencyDays.value = habit.frequencyDays
+                        _timeOfDay.value = habit.timeOfDay
                     }
                 }
             }
@@ -92,6 +104,18 @@ class AddEditHabitViewModel @Inject constructor(
         _reminderTime.value = value
     }
 
+    fun onFrequencyTypeChange(value: String) {
+        _frequencyType.value = value
+    }
+
+    fun onFrequencyDaysChange(value: List<Int>) {
+        _frequencyDays.value = value
+    }
+
+    fun onTimeOfDayChange(value: String) {
+        _timeOfDay.value = value
+    }
+
     fun saveHabit() {
         viewModelScope.launch {
             if (_name.value.isBlank()) {
@@ -103,6 +127,8 @@ class AddEditHabitViewModel @Inject constructor(
                 it.hour * 60 + it.minute
             }
 
+            val frequencyDaysStr = if (_frequencyDays.value.isEmpty()) null else _frequencyDays.value.joinToString(",")
+
             if (habitId != null && habitId.isNotEmpty() && habitId != "new") {
                 repository.updateHabit(
                     habitId = habitId,
@@ -111,7 +137,10 @@ class AddEditHabitViewModel @Inject constructor(
                     category = _category.value.name,
                     colorHex = _colorHex.value,
                     iconName = _iconName.value,
-                    reminderTimeMinutes = reminderTimeMinutes
+                    reminderTimeMinutes = reminderTimeMinutes,
+                    frequencyType = _frequencyType.value,
+                    frequencyDays = frequencyDaysStr,
+                    timeOfDay = _timeOfDay.value
                 )
             } else {
                 repository.insertHabit(
@@ -120,7 +149,10 @@ class AddEditHabitViewModel @Inject constructor(
                     category = _category.value.name,
                     colorHex = _colorHex.value,
                     iconName = _iconName.value,
-                    reminderTimeMinutes = reminderTimeMinutes
+                    reminderTimeMinutes = reminderTimeMinutes,
+                    frequencyType = _frequencyType.value,
+                    frequencyDays = frequencyDaysStr,
+                    timeOfDay = _timeOfDay.value
                 )
             }
             _eventFlow.emit(UiEvent.SaveHabit)

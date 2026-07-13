@@ -13,6 +13,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,6 +35,10 @@ import com.pankaj.habitflow.presentation.screen.stats.StatsScreen
 import com.pankaj.habitflow.presentation.screen.stats.StatsViewModel
 import com.pankaj.habitflow.presentation.screen.today.TodayScreen
 import com.pankaj.habitflow.presentation.screen.today.TodayViewModel
+import com.pankaj.habitflow.presentation.screen.onboarding.OnboardingScreen
+import com.pankaj.habitflow.presentation.screen.onboarding.OnboardingViewModel
+import com.pankaj.habitflow.presentation.screen.habits.HabitDetailScreen
+import com.pankaj.habitflow.presentation.screen.habits.HabitDetailViewModel
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Today : Screen("today", "Today", Icons.Default.Today)
@@ -45,13 +50,25 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 @Composable
 fun NavGraph(
     navController: NavHostController,
+    startDestination: String,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Today.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        composable("onboarding") {
+            val viewModel: OnboardingViewModel = hiltViewModel()
+            OnboardingScreen(
+                viewModel = viewModel,
+                onOnboardingFinished = {
+                    navController.navigate(Screen.Today.route) {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Screen.Today.route) {
             val viewModel: TodayViewModel = hiltViewModel()
             TodayScreen(
@@ -60,7 +77,7 @@ fun NavGraph(
                     navController.navigate("add_edit_habit/new")
                 },
                 onHabitClick = { habitId ->
-                    navController.navigate("add_edit_habit/$habitId")
+                    navController.navigate("habit_detail/$habitId")
                 }
             )
         }
@@ -78,7 +95,7 @@ fun NavGraph(
                     navController.navigate("add_edit_habit/new")
                 },
                 onHabitClick = { habitId ->
-                    navController.navigate("add_edit_habit/$habitId")
+                    navController.navigate("habit_detail/$habitId")
                 }
             )
         }
@@ -105,13 +122,42 @@ fun NavGraph(
                 }
             )
         }
+
+        composable(
+            route = "habit_detail/{habitId}",
+            arguments = listOf(
+                navArgument("habitId") {
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            val viewModel: HabitDetailViewModel = hiltViewModel()
+            HabitDetailScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    navController.navigateUp()
+                },
+                onEditClick = { habitId ->
+                    navController.navigate("add_edit_habit/$habitId")
+                }
+            )
+        }
     }
 }
 
 @Composable
 fun MainScreen(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val onboardingCompleted by settingsViewModel.onboardingCompleted.collectAsState()
+
+    val startDestination = when (onboardingCompleted) {
+        true -> Screen.Today.route
+        false -> "onboarding"
+        null -> return // Don't render until loaded
+    }
+
     val items = listOf(
         Screen.Today,
         Screen.Stats,
@@ -152,6 +198,7 @@ fun MainScreen(
     ) { paddingValues ->
         NavGraph(
             navController = navController,
+            startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

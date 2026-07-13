@@ -35,6 +35,13 @@ interface HabitRecordDao {
     suspend fun getCompletedDatesForHabit(habitId: String): List<String>
 
     @Query("""
+        SELECT * FROM habit_records 
+        WHERE habitId = :habitId AND isCompleted = 1 AND syncStatus != 'PENDING_DELETE'
+        ORDER BY date DESC
+    """)
+    fun getCompletedRecordsForHabitFlow(habitId: String): Flow<List<HabitRecordEntity>>
+
+    @Query("""
         SELECT date FROM habit_records 
         WHERE habitId = :habitId AND isCompleted = 1 AND syncStatus != 'PENDING_DELETE'
         AND date >= :startDate AND date <= :endDate
@@ -93,6 +100,9 @@ interface HabitRecordDao {
 
     @Query("SELECT * FROM habit_records WHERE syncStatus != 'SYNCED'")
     suspend fun getPendingRecords(): List<HabitRecordEntity>
+
+    @Query("SELECT * FROM habit_records WHERE syncStatus != 'PENDING_DELETE'")
+    suspend fun getAllRecords(): List<HabitRecordEntity>
 
     @Query("UPDATE habit_records SET syncStatus = 'SYNCED' WHERE id = :recordId")
     suspend fun markSynced(recordId: String)
