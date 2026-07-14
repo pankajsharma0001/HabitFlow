@@ -76,6 +76,9 @@ fun HabitDetailScreen(
     var noteDialogDate by remember { mutableStateOf<LocalDate?>(null) }
     var noteDialogText by remember { mutableStateOf("") }
 
+    var showDateDetailDialog by remember { mutableStateOf(false) }
+    var selectedCalendarDate by remember { mutableStateOf<LocalDate?>(null) }
+
     if (showNoteDialog && noteDialogDate != null) {
         AlertDialog(
             onDismissRequest = { showNoteDialog = false },
@@ -105,6 +108,122 @@ fun HabitDetailScreen(
             dismissButton = {
                 TextButton(onClick = { showNoteDialog = false }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Date detail dialog for calendar clicks
+    if (showDateDetailDialog && selectedCalendarDate != null) {
+        val clickedDate = selectedCalendarDate!!
+        val record = history.find { it.date == clickedDate }
+        val currentHabit = habit
+
+        AlertDialog(
+            onDismissRequest = {
+                showDateDetailDialog = false
+                selectedCalendarDate = null
+            },
+            title = {
+                Text(
+                    text = clickedDate.format(DateTimeFormatter.ofPattern("EEEE, MMM dd, yyyy")),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (record != null) {
+                        // Completion status
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Text(
+                                text = "Completed",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Amount for budget habits
+                        if (currentHabit?.habitType == "BUDGET" && record.value != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Amount Spent",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${currentHabit.valueUnit ?: "$"}${String.format("%.2f", record.value)}",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Quantity for quantity habits
+                        if (currentHabit?.habitType == "QUANTITY" && record.value != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Value",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${record.value.toInt()} ${currentHabit.valueUnit ?: ""}".trim(),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Note
+                        if (!record.note.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Note",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = record.note,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "No activity recorded on this day.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDateDetailDialog = false
+                        selectedCalendarDate = null
+                    }
+                ) {
+                    Text("Close")
                 }
             }
         )
@@ -264,7 +383,11 @@ fun HabitDetailScreen(
                             completionData = heatMapData,
                             maxCompletions = 1,
                             isDarkTheme = isDark,
-                            weeksToShow = 14
+                            weeksToShow = 14,
+                            onDateClick = { date ->
+                                selectedCalendarDate = date
+                                showDateDetailDialog = true
+                            }
                         )
                     }
                 }

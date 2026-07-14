@@ -261,7 +261,8 @@ class HabitRepositoryImpl @Inject constructor(
                     habitId = entity.habitId,
                     date = LocalDate.parse(entity.date, dateFormatter),
                     completedAtMillis = entity.completedAt,
-                    note = entity.note
+                    note = entity.note,
+                    value = entity.value
                 )
             }
         }

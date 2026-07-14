@@ -1,6 +1,7 @@
 package com.pankaj.habitflow.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,7 +41,8 @@ fun HeatMapCalendar(
     maxCompletions: Int,
     modifier: Modifier = Modifier,
     weeksToShow: Int = 16,
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    onDateClick: ((LocalDate) -> Unit)? = null
 ) {
     val today = LocalDate.now()
     val endDate = today
@@ -113,6 +115,13 @@ fun HeatMapCalendar(
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(color)
+                                    .then(
+                                        if (date != null && onDateClick != null) {
+                                            Modifier.clickable { onDateClick(date) }
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
                             )
                         }
                     }

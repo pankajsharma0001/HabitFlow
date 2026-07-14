@@ -24,13 +24,18 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -71,12 +76,21 @@ fun HabitsScreen(
     modifier: Modifier = Modifier
 ) {
     val allHabits by viewModel.habits.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Active", "Archived")
 
     val activeHabits = allHabits.filter { !it.isArchived }
     val archivedHabits = allHabits.filter { it.isArchived }
     var isReorderMode by remember { mutableStateOf(false) }
+
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    // Sync pager -> tab selection & reset reorder mode when switching
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            if (page != 0) isReorderMode = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -91,7 +105,7 @@ fun HabitsScreen(
                     )
                 },
                 actions = {
-                    if (selectedTab == 0 && activeHabits.isNotEmpty()) {
+                    if (pagerState.currentPage == 0 && activeHabits.isNotEmpty()) {
                         IconButton(onClick = { isReorderMode = !isReorderMode }) {
                             Icon(
                                 imageVector = if (isReorderMode) Icons.Default.Check else Icons.Default.SwapVert,
@@ -108,7 +122,7 @@ fun HabitsScreen(
             )
         },
         floatingActionButton = {
-            if (selectedTab == 0) {
+            if (pagerState.currentPage == 0) {
                 FloatingActionButton(
                     onClick = onAddHabitClick,
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -131,22 +145,24 @@ fun HabitsScreen(
                 .padding(paddingValues)
         ) {
             TabRow(
-                selectedTabIndex = selectedTab,
+                selectedTabIndex = pagerState.currentPage,
                 containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.primary
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        selected = selectedTab == index,
+                        selected = pagerState.currentPage == index,
                         onClick = {
-                            selectedTab = index
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
                             isReorderMode = false
                         },
                         text = {
                             Text(
                                 text = title,
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium
+                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium
                                 )
                             )
                         }
@@ -154,99 +170,102 @@ fun HabitsScreen(
                 }
             }
 
-            val habitsToShow = if (selectedTab == 0) activeHabits else archivedHabits
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) { page ->
+                val habitsToShow = if (page == 0) activeHabits else archivedHabits
 
-            if (habitsToShow.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(32.dp)
+                if (habitsToShow.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = if (selectedTab == 0) Icons.Default.AddTask else Icons.Default.Archive,
-                            contentDescription = "Empty Habits",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outlineVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = if (selectedTab == 0) "No active habits" else "No archived habits",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = if (selectedTab == 0)
-                                "Create a habit to begin your tracker journey!"
-                            else "Archived habits will appear here.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        if (selectedTab == 0) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (page == 0) Icons.Default.AddTask else Icons.Default.Archive,
+                                contentDescription = "Empty Habits",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.outlineVariant
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onAddHabitClick) {
-                                Text("Create Habit")
+                            Text(
+                                text = if (page == 0) "No active habits" else "No archived habits",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = if (page == 0)
+                                    "Create a habit to begin your tracker journey!"
+                                else "Archived habits will appear here.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            if (page == 0) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(onClick = onAddHabitClick) {
+                                    Text("Create Habit")
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = 80.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    itemsIndexed(
-                        items = habitsToShow,
-                        key = { _, habit -> habit.id }
-                    ) { index, habit ->
-                        HabitManagementCard(
-                            habit = habit,
-                            onEditClick = { onHabitClick(habit.id) },
-                            onArchiveToggle = {
-                                if (habit.isArchived) {
-                                    viewModel.unarchiveHabit(habit.id)
-                                } else {
-                                    viewModel.archiveHabit(habit.id)
-                                }
-                            },
-                            onDeleteClick = { viewModel.deleteHabit(habit.id) },
-                            reorderMode = isReorderMode,
-                            onMoveUpClick = if (index > 0) {
-                                {
-                                    val mutable = habitsToShow.toMutableList()
-                                    val temp = mutable[index]
-                                    mutable[index] = mutable[index - 1]
-                                    mutable[index - 1] = temp
-                                    viewModel.updateHabitsOrder(mutable.map { it.id })
-                                }
-                            } else null,
-                            onMoveDownClick = if (index < habitsToShow.size - 1) {
-                                {
-                                    val mutable = habitsToShow.toMutableList()
-                                    val temp = mutable[index]
-                                    mutable[index] = mutable[index + 1]
-                                    mutable[index + 1] = temp
-                                    viewModel.updateHabitsOrder(mutable.map { it.id })
-                                }
-                            } else null
-                        )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            top = 16.dp,
+                            end = 16.dp,
+                            bottom = 80.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        itemsIndexed(
+                            items = habitsToShow,
+                            key = { _, habit -> habit.id }
+                        ) { index, habit ->
+                            HabitManagementCard(
+                                habit = habit,
+                                onEditClick = { onHabitClick(habit.id) },
+                                onArchiveToggle = {
+                                    if (habit.isArchived) {
+                                        viewModel.unarchiveHabit(habit.id)
+                                    } else {
+                                        viewModel.archiveHabit(habit.id)
+                                    }
+                                },
+                                onDeleteClick = { viewModel.deleteHabit(habit.id) },
+                                reorderMode = isReorderMode && page == 0,
+                                onMoveUpClick = if (index > 0) {
+                                    {
+                                        val mutable = habitsToShow.toMutableList()
+                                        val temp = mutable[index]
+                                        mutable[index] = mutable[index - 1]
+                                        mutable[index - 1] = temp
+                                        viewModel.updateHabitsOrder(mutable.map { it.id })
+                                    }
+                                } else null,
+                                onMoveDownClick = if (index < habitsToShow.size - 1) {
+                                    {
+                                        val mutable = habitsToShow.toMutableList()
+                                        val temp = mutable[index]
+                                        mutable[index] = mutable[index + 1]
+                                        mutable[index + 1] = temp
+                                        viewModel.updateHabitsOrder(mutable.map { it.id })
+                                    }
+                                } else null
+                            )
+                        }
                     }
                 }
             }
@@ -380,13 +399,6 @@ fun HabitManagementCard(
                         )
                     }
                 } else {
-                    IconButton(onClick = onEditClick) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                     IconButton(onClick = onArchiveToggle) {
                         Icon(
                             imageVector = if (habit.isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
