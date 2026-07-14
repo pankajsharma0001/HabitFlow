@@ -77,6 +77,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = null
         )
 
+    val biometricEnabled: StateFlow<Boolean> = themePreferences.biometricEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     val isSyncing: StateFlow<Boolean> = combine(
         syncScheduler.syncWorkInfoFlow,
         syncScheduler.manualSyncWorkInfoFlow
@@ -163,6 +170,12 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val json = habitRepository.exportDataAsJson()
             onDataExported(json)
+        }
+    }
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            themePreferences.setBiometricEnabled(enabled)
         }
     }
 }

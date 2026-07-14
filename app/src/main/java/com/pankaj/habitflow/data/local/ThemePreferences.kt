@@ -28,6 +28,7 @@ class ThemePreferences @Inject constructor(
     private val syncEnabledKey = booleanPreferencesKey("sync_enabled")
     private val lastSyncKey = longPreferencesKey("last_sync_timestamp")
     private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
+    private val biometricEnabledKey = booleanPreferencesKey("biometric_enabled")
 
     val themeModeFlow: Flow<ThemeMode> = context.dataStore.data.map { preferences ->
         val name = preferences[themeKey] ?: ThemeMode.SYSTEM.name
@@ -56,6 +57,10 @@ class ThemePreferences @Inject constructor(
 
     val onboardingCompletedFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[onboardingCompletedKey] ?: false
+    }
+
+    val biometricEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[biometricEnabledKey] ?: false
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -91,6 +96,12 @@ class ThemePreferences @Inject constructor(
     suspend fun setOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[onboardingCompletedKey] = completed
+        }
+    }
+
+    suspend fun setBiometricEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[biometricEnabledKey] = enabled
         }
     }
 }

@@ -44,6 +44,9 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Lock
+import androidx.biometric.BiometricPrompt
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -428,6 +431,108 @@ fun SettingsScreen(
                 )
             }
 
+            // ── Security ─────────────────────────────────────────────
+            val biometricEnabled by viewModel.biometricEnabled.collectAsState()
+            SettingsCard(
+                title = "Security",
+                icon = Icons.Default.Lock
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "App Lock",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Require biometric authentication to open HabitFlow",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = biometricEnabled,
+                        onCheckedChange = { checked ->
+                            val activity = context as? FragmentActivity
+                            if (activity != null) {
+                                if (checked) {
+                                    val biometricManager = androidx.biometric.BiometricManager.from(context)
+                                    val canAuthenticate = biometricManager.canAuthenticate(
+                                        androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or 
+                                        androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                                    )
+                                    if (canAuthenticate == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS) {
+                                        val executor = ContextCompat.getMainExecutor(context)
+                                        val biometricPrompt = BiometricPrompt(
+                                            activity,
+                                            executor,
+                                            object : BiometricPrompt.AuthenticationCallback() {
+                                                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                                    super.onAuthenticationSucceeded(result)
+                                                    viewModel.setBiometricEnabled(true)
+                                                    Toast.makeText(context, "App lock enabled successfully!", Toast.LENGTH_SHORT).show()
+                                                }
+                                                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                                                    super.onAuthenticationError(errorCode, errString)
+                                                    Toast.makeText(context, "Authentication failed: $errString", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        )
+                                        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                                            .setTitle("Enable App Lock")
+                                            .setSubtitle("Confirm identity to enable security lock")
+                                            .setAllowedAuthenticators(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                                            .build()
+                                        try {
+                                            biometricPrompt.authenticate(promptInfo)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Could not launch biometric prompt: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Biometric security is not set up or not supported on this device.", Toast.LENGTH_LONG).show()
+                                    }
+                                } else {
+                                    val executor = ContextCompat.getMainExecutor(context)
+                                    val biometricPrompt = BiometricPrompt(
+                                        activity,
+                                        executor,
+                                        object : BiometricPrompt.AuthenticationCallback() {
+                                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                                super.onAuthenticationSucceeded(result)
+                                                viewModel.setBiometricEnabled(false)
+                                                Toast.makeText(context, "App lock disabled successfully!", Toast.LENGTH_SHORT).show()
+                                            }
+                                            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                                                super.onAuthenticationError(errorCode, errString)
+                                                Toast.makeText(context, "Authentication failed: $errString", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
+                                    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                                        .setTitle("Disable App Lock")
+                                        .setSubtitle("Confirm identity to disable security lock")
+                                        .setAllowedAuthenticators(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                                        .build()
+                                    try {
+                                        biometricPrompt.authenticate(promptInfo)
+                                    } catch (e: Exception) {
+                                        viewModel.setBiometricEnabled(false)
+                                    }
+                                }
+                            } else {
+                                viewModel.setBiometricEnabled(checked)
+                            }
+                        }
+                    )
+                }
+            }
+
             // ── Cloud Sync ───────────────────────────────────────────
             SettingsCard(
                 title = "Cloud Sync",
@@ -629,7 +734,7 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Version 1.1.0",
+                        text = "Version 1.3.2",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
