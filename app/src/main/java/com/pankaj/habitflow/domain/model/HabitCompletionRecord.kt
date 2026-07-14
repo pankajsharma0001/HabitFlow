@@ -7,5 +7,6 @@ data class HabitCompletionRecord(
     val habitId: String,
     val date: LocalDate,
     val completedAtMillis: Long?,
-    val note: String?
+    val note: String?,
+    val value: Double? = null
 )

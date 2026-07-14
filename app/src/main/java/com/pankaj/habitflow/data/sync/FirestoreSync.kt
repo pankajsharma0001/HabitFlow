@@ -70,6 +70,11 @@ class FirestoreSync @Inject constructor(
                     "reminderTimeMinutes" to habit.reminderTimeMinutes,
                     "createdAt" to habit.createdAt,
                     "isArchived" to habit.isArchived,
+                    "frequencyType" to habit.frequencyType,
+                    "frequencyDays" to habit.frequencyDays,
+                    "habitType" to habit.habitType,
+                    "targetValue" to habit.targetValue,
+                    "valueUnit" to habit.valueUnit,
                     "isDeleted" to false,
                     "lastModified" to habit.lastModified
                 )
@@ -98,6 +103,8 @@ class FirestoreSync @Inject constructor(
                     "date" to record.date,
                     "isCompleted" to record.isCompleted,
                     "completedAt" to record.completedAt,
+                    "value" to record.value,
+                    "note" to record.note,
                     "isDeleted" to false,
                     "lastModified" to record.lastModified
                 )
@@ -135,6 +142,11 @@ class FirestoreSync @Inject constructor(
                         reminderTimeMinutes = doc.getLong("reminderTimeMinutes")?.toInt(),
                         createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
                         isArchived = doc.getBoolean("isArchived") ?: false,
+                        frequencyType = doc.getString("frequencyType") ?: "DAILY",
+                        frequencyDays = doc.getString("frequencyDays"),
+                        habitType = doc.getString("habitType") ?: "NORMAL",
+                        targetValue = doc.getDouble("targetValue"),
+                        valueUnit = doc.getString("valueUnit"),
                         syncStatus = SyncStatus.SYNCED.name,
                         lastModified = lastModified
                     )
@@ -176,6 +188,11 @@ class FirestoreSync @Inject constructor(
                             reminderTimeMinutes = habitDoc.getLong("reminderTimeMinutes")?.toInt(),
                             createdAt = habitDoc.getLong("createdAt") ?: System.currentTimeMillis(),
                             isArchived = habitDoc.getBoolean("isArchived") ?: false,
+                            frequencyType = habitDoc.getString("frequencyType") ?: "DAILY",
+                            frequencyDays = habitDoc.getString("frequencyDays"),
+                            habitType = habitDoc.getString("habitType") ?: "NORMAL",
+                            targetValue = habitDoc.getDouble("targetValue"),
+                            valueUnit = habitDoc.getString("valueUnit"),
                             syncStatus = SyncStatus.SYNCED.name,
                             lastModified = habitDoc.getLong("lastModified") ?: 0L
                         )
@@ -196,6 +213,8 @@ class FirestoreSync @Inject constructor(
                         date = date,
                         isCompleted = doc.getBoolean("isCompleted") ?: true,
                         completedAt = doc.getLong("completedAt"),
+                        value = doc.getDouble("value"),
+                        note = doc.getString("note"),
                         syncStatus = SyncStatus.SYNCED.name,
                         lastModified = lastModified
                     )

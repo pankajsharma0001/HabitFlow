@@ -79,7 +79,10 @@ class HabitRepositoryImpl @Inject constructor(
         frequencyType: String,
         frequencyDays: String?,
         sortOrder: Int,
-        timeOfDay: String
+        timeOfDay: String,
+        habitType: String,
+        targetValue: Double?,
+        valueUnit: String?
     ): String {
         val id = UUID.randomUUID().toString()
         val entity = HabitEntity(
@@ -95,6 +98,9 @@ class HabitRepositoryImpl @Inject constructor(
             frequencyDays = frequencyDays,
             sortOrder = sortOrder,
             timeOfDay = timeOfDay,
+            habitType = habitType,
+            targetValue = targetValue,
+            valueUnit = valueUnit,
             syncStatus = SyncStatus.PENDING_INSERT.name
         )
         habitDao.insertHabit(entity)
@@ -117,7 +123,10 @@ class HabitRepositoryImpl @Inject constructor(
         frequencyType: String,
         frequencyDays: String?,
         sortOrder: Int,
-        timeOfDay: String
+        timeOfDay: String,
+        habitType: String,
+        targetValue: Double?,
+        valueUnit: String?
     ) {
         val existing = habitDao.getHabitById(habitId) ?: return
         val updated = existing.copy(
@@ -131,6 +140,9 @@ class HabitRepositoryImpl @Inject constructor(
             frequencyDays = frequencyDays,
             sortOrder = sortOrder,
             timeOfDay = timeOfDay,
+            habitType = habitType,
+            targetValue = targetValue,
+            valueUnit = valueUnit,
             lastModified = System.currentTimeMillis(),
             syncStatus = if (existing.syncStatus == SyncStatus.PENDING_INSERT.name)
                 SyncStatus.PENDING_INSERT.name
@@ -264,6 +276,92 @@ class HabitRepositoryImpl @Inject constructor(
     override fun getCompletedHabitIdsForDateFlow(date: LocalDate): Flow<Set<String>> {
         val dateStr = date.format(dateFormatter)
         return recordDao.getCompletedHabitIdsForDateFlow(dateStr).map { it.toSet() }
+    }
+
+    override fun getRecordsForDateFlow(date: LocalDate): Flow<List<HabitCompletionRecord>> {
+        val dateStr = date.format(dateFormatter)
+        return recordDao.getRecordsForDateFlow(dateStr).map { list ->
+            list.map { entity ->
+                HabitCompletionRecord(
+                    id = entity.id,
+                    habitId = entity.habitId,
+                    date = LocalDate.parse(entity.date, dateFormatter),
+                    completedAtMillis = entity.completedAt,
+                    note = entity.note,
+                    value = entity.value
+                )
+            }
+        }
+    }
+
+    override fun getAllCompletedRecordsFlow(): Flow<List<HabitCompletionRecord>> {
+        return recordDao.getAllCompletedRecordsFlow().map { list ->
+            list.map { entity ->
+                HabitCompletionRecord(
+                    id = entity.id,
+                    habitId = entity.habitId,
+                    date = LocalDate.parse(entity.date, dateFormatter),
+                    completedAtMillis = entity.completedAt,
+                    note = entity.note,
+                    value = entity.value
+                )
+            }
+        }
+    }
+
+    override fun getCompletedRecordsInRangeFlow(startDate: LocalDate, endDate: LocalDate): Flow<List<HabitCompletionRecord>> {
+        val startStr = startDate.format(dateFormatter)
+        val endStr = endDate.format(dateFormatter)
+        return recordDao.getCompletedRecordsInRangeFlow(startStr, endStr).map { list ->
+            list.map { entity ->
+                HabitCompletionRecord(
+                    id = entity.id,
+                    habitId = entity.habitId,
+                    date = LocalDate.parse(entity.date, dateFormatter),
+                    completedAtMillis = entity.completedAt,
+                    note = entity.note,
+                    value = entity.value
+                )
+            }
+        }
+    }
+
+    override suspend fun logHabitProgress(habitId: String, date: LocalDate, value: Double?, isCompleted: Boolean, note: String?) {
+        val dateStr = date.format(dateFormatter)
+        val existing = recordDao.getRecord(habitId, dateStr)
+        if (existing != null) {
+            if (!isCompleted && value == null && note == null) {
+                recordDao.deleteRecord(habitId, dateStr)
+            } else {
+                recordDao.insertRecord(
+                    existing.copy(
+                        isCompleted = isCompleted,
+                        completedAt = if (isCompleted) System.currentTimeMillis() else null,
+                        value = value,
+                        note = note,
+                        lastModified = System.currentTimeMillis(),
+                        syncStatus = if (existing.syncStatus == SyncStatus.PENDING_INSERT.name)
+                            SyncStatus.PENDING_INSERT.name
+                        else SyncStatus.PENDING_UPDATE.name
+                    )
+                )
+            }
+        } else {
+            if (isCompleted || value != null || note != null) {
+                recordDao.insertRecord(
+                    HabitRecordEntity(
+                        id = UUID.randomUUID().toString(),
+                        habitId = habitId,
+                        date = dateStr,
+                        isCompleted = isCompleted,
+                        completedAt = if (isCompleted) System.currentTimeMillis() else null,
+                        value = value,
+                        note = note,
+                        syncStatus = SyncStatus.PENDING_INSERT.name
+                    )
+                )
+            }
+        }
     }
 
     // ── Statistics ──────────────────────────────────────────
@@ -448,6 +546,9 @@ class HabitRepositoryImpl @Inject constructor(
             jsonBuilder.append("      \"frequencyDays\": ${h.frequencyDays?.let { "\"$it\"" } ?: "null"},\n")
             jsonBuilder.append("      \"sortOrder\": ${h.sortOrder},\n")
             jsonBuilder.append("      \"timeOfDay\": \"${h.timeOfDay}\",\n")
+            jsonBuilder.append("      \"habitType\": \"${h.habitType}\",\n")
+            jsonBuilder.append("      \"targetValue\": ${h.targetValue},\n")
+            jsonBuilder.append("      \"valueUnit\": ${h.valueUnit?.let { "\"${it.replace("\"", "\\\"")}\"" } ?: "null"},\n")
             jsonBuilder.append("      \"createdAt\": ${h.createdAt},\n")
             jsonBuilder.append("      \"isArchived\": ${h.isArchived}\n")
             jsonBuilder.append("    }${if (i < habits.size - 1) "," else ""}\n")
@@ -463,6 +564,7 @@ class HabitRepositoryImpl @Inject constructor(
             jsonBuilder.append("      \"date\": \"${r.date}\",\n")
             jsonBuilder.append("      \"isCompleted\": ${r.isCompleted},\n")
             jsonBuilder.append("      \"completedAt\": ${r.completedAt},\n")
+            jsonBuilder.append("      \"value\": ${r.value},\n")
             jsonBuilder.append("      \"note\": ${r.note?.let { "\"${it.replace("\"", "\\\"")}\"" } ?: "null"}\n")
             jsonBuilder.append("    }${if (i < records.size - 1) "," else ""}\n")
         }
@@ -480,7 +582,9 @@ class HabitRepositoryImpl @Inject constructor(
         val totalCompletions = getTotalCompletions(entity.id)
         val completionRate = getCompletionRate(entity.id)
         val todayStr = LocalDate.now().format(dateFormatter)
-        val note = recordDao.getRecord(entity.id, todayStr)?.note
+        val todayRecord = recordDao.getRecord(entity.id, todayStr)
+        val note = todayRecord?.note
+        val valueToday = todayRecord?.value
 
         return Habit(
             id = entity.id,
@@ -503,6 +607,10 @@ class HabitRepositoryImpl @Inject constructor(
             frequencyDays = entity.frequencyDays?.split(",")?.mapNotNull { it.toIntOrNull() } ?: emptyList(),
             sortOrder = entity.sortOrder,
             timeOfDay = entity.timeOfDay,
+            habitType = entity.habitType,
+            targetValue = entity.targetValue,
+            valueUnit = entity.valueUnit,
+            valueToday = valueToday,
             noteToday = note
         )
     }

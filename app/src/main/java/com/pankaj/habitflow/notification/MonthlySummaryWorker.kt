@@ -11,7 +11,6 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.pankaj.habitflow.MainActivity
-import com.pankaj.habitflow.R
 import com.pankaj.habitflow.data.local.dao.HabitDao
 import com.pankaj.habitflow.data.local.dao.HabitRecordDao
 import dagger.assisted.Assisted
@@ -20,7 +19,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @HiltWorker
-class WeeklySummaryWorker @AssistedInject constructor(
+class MonthlySummaryWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted workerParams: WorkerParameters,
     private val habitDao: HabitDao,
@@ -28,9 +27,9 @@ class WeeklySummaryWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {
-        const val CHANNEL_ID = "weekly_summary"
-        const val NOTIFICATION_ID = 9001
-        const val WORK_NAME = "weekly_summary_worker"
+        const val CHANNEL_ID = "monthly_summary"
+        const val NOTIFICATION_ID = 9002
+        const val WORK_NAME = "monthly_summary_worker"
     }
 
     override suspend fun doWork(): Result {
@@ -42,34 +41,9 @@ class WeeklySummaryWorker @AssistedInject constructor(
 
             if (totalHabits == 0) return Result.success()
 
-            // Calculate stats for the past 7 days
-            var totalCompletions = 0
-            val totalPossible = totalHabits * 7
-            val startDateStr = today.minusDays(6).format(formatter)
+            val startDateStr = today.minusDays(29).format(formatter)
             val endDateStr = today.format(formatter)
             val completedRecords = recordDao.getCompletedRecordsInRange(startDateStr, endDateStr)
-
-            for (dayOffset in 0L until 7L) {
-                val date = today.minusDays(dayOffset)
-                val dateStr = date.format(formatter)
-                val completedIds = completedRecords.filter { it.date == dateStr }.map { it.habitId }.toSet()
-                totalCompletions += activeHabits.count { it.id in completedIds }
-            }
-
-            val completionRate = if (totalPossible > 0) {
-                (totalCompletions * 100) / totalPossible
-            } else 0
-
-            // Find the habit with the highest streak (best performer this week)
-            val bestHabit = activeHabits.maxByOrNull { habit ->
-                var streak = 0
-                for (i in 0L until 7L) {
-                    val dateStr = today.minusDays(i).format(formatter)
-                    val completed = completedRecords.any { it.habitId == habit.id && it.date == dateStr }
-                    if (completed) streak++ else break
-                }
-                streak
-            }
 
             val budgetSummaryList = mutableListOf<String>()
             val budgetHabits = activeHabits.filter { it.habitType == "BUDGET" }
@@ -78,51 +52,41 @@ class WeeklySummaryWorker @AssistedInject constructor(
                 val totalSpent = bhRecords.sumOf { it.value ?: 0.0 }
                 if (totalSpent > 0.0) {
                     val currency = bh.valueUnit ?: "$"
-                    val notes = bhRecords.mapNotNull { it.note }.filter { it.isNotBlank() }
+                    val notes = bhRecords.mapNotNull { it.note }.filter { it.isNotBlank() }.distinct()
                     val notesStr = if (notes.isNotEmpty()) " (${notes.joinToString(", ")})" else ""
                     budgetSummaryList.add("- ${bh.name}: $currency${String.format("%.2f", totalSpent)}$notesStr")
                 }
             }
 
-            val title = "📊 Your Weekly Summary"
-            val body = buildString {
-                append("This week: $totalCompletions/$totalPossible completed ($completionRate%)")
-                if (bestHabit != null) {
-                    append("\n⭐ Top habit: ${bestHabit.name}")
-                }
-                if (budgetSummaryList.isNotEmpty()) {
-                    append("\n\n💰 Weekly Spend Summary:\n")
-                    append(budgetSummaryList.joinToString("\n"))
-                }
-                append("\n\n")
-                if (completionRate >= 80) {
-                    append("🔥 Amazing consistency! Keep it up!")
-                } else if (completionRate >= 50) {
-                    append("💪 Good progress! Push for more this week!")
-                } else {
-                    append("🌱 Room to grow. Small steps matter!")
-                }
+            if (budgetSummaryList.isEmpty()) {
+                return Result.success() // No monthly spending records to notify
             }
 
-            showWeeklySummaryNotification(title, body)
+            val title = "📅 Your Monthly Spend Summary"
+            val body = buildString {
+                append("Here is your spending summary for the past 30 days:\n\n")
+                append(budgetSummaryList.joinToString("\n"))
+                append("\n\nKeep tracking your budgets in HabitFlow! 📈")
+            }
+
+            showMonthlySummaryNotification(title, body)
             Result.success()
         } catch (e: Exception) {
             Result.failure()
         }
     }
 
-    private fun showWeeklySummaryNotification(title: String, body: String) {
+    private fun showMonthlySummaryNotification(title: String, body: String) {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Create channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                context.getString(R.string.weekly_summary_channel_name),
+                "Monthly Summary",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = context.getString(R.string.weekly_summary_channel_desc)
+                description = "Monthly summary of your budget and spending tracker"
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -138,7 +102,7 @@ class WeeklySummaryWorker @AssistedInject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))

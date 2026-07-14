@@ -35,6 +35,7 @@ data class HabitRecordEntity(
     val isCompleted: Boolean = true,
     val completedAt: Long? = null,
     val note: String? = null,
+    val value: Double? = null,
     val syncStatus: String = SyncStatus.PENDING_INSERT.name,
     val lastModified: Long = System.currentTimeMillis()
 )

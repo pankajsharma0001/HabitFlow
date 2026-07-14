@@ -25,5 +25,9 @@ data class Habit(
     val frequencyDays: List<Int> = emptyList(),
     val sortOrder: Int = 0,
     val timeOfDay: String = "ANYTIME",
+    val habitType: String = "NORMAL",
+    val targetValue: Double? = null,
+    val valueUnit: String? = null,
+    val valueToday: Double? = null,
     val noteToday: String? = null
 )

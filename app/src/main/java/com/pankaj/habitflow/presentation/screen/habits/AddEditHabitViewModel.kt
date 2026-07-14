@@ -51,6 +51,15 @@ class AddEditHabitViewModel @Inject constructor(
     private val _timeOfDay = MutableStateFlow("ANYTIME")
     val timeOfDay: StateFlow<String> = _timeOfDay.asStateFlow()
 
+    private val _habitType = MutableStateFlow("NORMAL")
+    val habitType: StateFlow<String> = _habitType.asStateFlow()
+
+    private val _targetValue = MutableStateFlow("")
+    val targetValue: StateFlow<String> = _targetValue.asStateFlow()
+
+    private val _valueUnit = MutableStateFlow("")
+    val valueUnit: StateFlow<String> = _valueUnit.asStateFlow()
+
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow: SharedFlow<UiEvent> = _eventFlow.asSharedFlow()
 
@@ -73,6 +82,9 @@ class AddEditHabitViewModel @Inject constructor(
                         _frequencyType.value = habit.frequencyType
                         _frequencyDays.value = habit.frequencyDays
                         _timeOfDay.value = habit.timeOfDay
+                        _habitType.value = habit.habitType
+                        _targetValue.value = habit.targetValue?.toString() ?: ""
+                        _valueUnit.value = habit.valueUnit ?: ""
                     }
                 }
             }
@@ -116,6 +128,24 @@ class AddEditHabitViewModel @Inject constructor(
         _timeOfDay.value = value
     }
 
+    fun onHabitTypeChange(value: String) {
+        _habitType.value = value
+        if (value == "NORMAL") {
+            _targetValue.value = ""
+            _valueUnit.value = ""
+        } else if (value == "BUDGET" && _valueUnit.value.isBlank()) {
+            _valueUnit.value = "$"
+        }
+    }
+
+    fun onTargetValueChange(value: String) {
+        _targetValue.value = value
+    }
+
+    fun onValueUnitChange(value: String) {
+        _valueUnit.value = value
+    }
+
     fun saveHabit() {
         viewModelScope.launch {
             if (_name.value.isBlank()) {
@@ -123,11 +153,26 @@ class AddEditHabitViewModel @Inject constructor(
                 return@launch
             }
 
+            if (_habitType.value == "QUANTITY") {
+                val targetVal = _targetValue.value.toDoubleOrNull()
+                if (targetVal == null || targetVal <= 0.0) {
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Please enter a valid target quantity (> 0)"))
+                    return@launch
+                }
+                if (_valueUnit.value.isBlank()) {
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Please enter a unit (e.g. glasses, km)"))
+                    return@launch
+                }
+            }
+
             val reminderTimeMinutes = _reminderTime.value?.let {
                 it.hour * 60 + it.minute
             }
 
             val frequencyDaysStr = if (_frequencyDays.value.isEmpty()) null else _frequencyDays.value.joinToString(",")
+
+            val targetValDouble = _targetValue.value.toDoubleOrNull()
+            val unitStr = _valueUnit.value.takeIf { it.isNotBlank() }
 
             if (habitId != null && habitId.isNotEmpty() && habitId != "new") {
                 repository.updateHabit(
@@ -140,7 +185,10 @@ class AddEditHabitViewModel @Inject constructor(
                     reminderTimeMinutes = reminderTimeMinutes,
                     frequencyType = _frequencyType.value,
                     frequencyDays = frequencyDaysStr,
-                    timeOfDay = _timeOfDay.value
+                    timeOfDay = _timeOfDay.value,
+                    habitType = _habitType.value,
+                    targetValue = targetValDouble,
+                    valueUnit = unitStr
                 )
             } else {
                 repository.insertHabit(
@@ -152,7 +200,10 @@ class AddEditHabitViewModel @Inject constructor(
                     reminderTimeMinutes = reminderTimeMinutes,
                     frequencyType = _frequencyType.value,
                     frequencyDays = frequencyDaysStr,
-                    timeOfDay = _timeOfDay.value
+                    timeOfDay = _timeOfDay.value,
+                    habitType = _habitType.value,
+                    targetValue = targetValDouble,
+                    valueUnit = unitStr
                 )
             }
             _eventFlow.emit(UiEvent.SaveHabit)

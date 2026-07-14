@@ -21,6 +21,19 @@ interface HabitRecordDao {
     @Query("SELECT habitId FROM habit_records WHERE date = :date AND isCompleted = 1 AND syncStatus != 'PENDING_DELETE'")
     suspend fun getCompletedHabitIdsForDate(date: String): List<String>
 
+    @Query("SELECT * FROM habit_records WHERE date = :date AND syncStatus != 'PENDING_DELETE'")
+    fun getRecordsForDateFlow(date: String): Flow<List<HabitRecordEntity>>
+
+    @Query("SELECT * FROM habit_records WHERE isCompleted = 1 AND syncStatus != 'PENDING_DELETE'")
+    fun getAllCompletedRecordsFlow(): Flow<List<HabitRecordEntity>>
+
+    @Query("""
+        SELECT * FROM habit_records 
+        WHERE isCompleted = 1 AND syncStatus != 'PENDING_DELETE'
+        AND date >= :startDate AND date <= :endDate
+    """)
+    fun getCompletedRecordsInRangeFlow(startDate: String, endDate: String): Flow<List<HabitRecordEntity>>
+
     @Query("""
         SELECT COUNT(*) FROM habit_records 
         WHERE habitId = :habitId AND isCompleted = 1 AND syncStatus != 'PENDING_DELETE'

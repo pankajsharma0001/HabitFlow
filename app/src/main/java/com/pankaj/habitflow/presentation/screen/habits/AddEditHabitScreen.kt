@@ -159,6 +159,88 @@ fun AddEditHabitScreen(
                 maxLines = 3
             )
 
+            // Habit Type Picker
+            Text(
+                text = "Habit Type",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+
+            val habitType by viewModel.habitType.collectAsState()
+            val targetValue by viewModel.targetValue.collectAsState()
+            val valueUnit by viewModel.valueUnit.collectAsState()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    "NORMAL" to "Normal",
+                    "QUANTITY" to "Counter",
+                    "BUDGET" to "Expense"
+                ).forEach { (typeKey, typeLabel) ->
+                    val isSelected = habitType == typeKey
+                    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(containerColor)
+                            .clickable { viewModel.onHabitTypeChange(typeKey) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = typeLabel,
+                            color = textColor,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            if (habitType == "QUANTITY") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = targetValue,
+                        onValueChange = viewModel::onTargetValueChange,
+                        label = { Text("Target Quantity") },
+                        placeholder = { Text("e.g. 8.0") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = valueUnit,
+                        onValueChange = viewModel::onValueUnitChange,
+                        label = { Text("Unit") },
+                        placeholder = { Text("e.g. glasses") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+                }
+            } else if (habitType == "BUDGET") {
+                OutlinedTextField(
+                    value = valueUnit,
+                    onValueChange = viewModel::onValueUnitChange,
+                    label = { Text("Currency Symbol / Unit") },
+                    placeholder = { Text("e.g. $") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+            }
+
             // Category Picker
             Text(
                 text = "Category",
@@ -268,7 +350,11 @@ fun AddEditHabitScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("DAILY" to "Daily", "CUSTOM_DAYS" to "Specific Days").forEach { (typeKey, typeLabel) ->
+                listOf(
+                    "DAILY" to "Daily",
+                    "CUSTOM_DAYS" to "Specific Days",
+                    "FLEXIBLE_DAYS" to "Flexible Days"
+                ).forEach { (typeKey, typeLabel) ->
                     val isSelected = freqType == typeKey
                     val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
@@ -279,7 +365,12 @@ fun AddEditHabitScreen(
                             .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(containerColor)
-                            .clickable { viewModel.onFrequencyTypeChange(typeKey) },
+                            .clickable {
+                                viewModel.onFrequencyTypeChange(typeKey)
+                                if (typeKey == "FLEXIBLE_DAYS" && (freqDays.isEmpty() || freqDays.size > 1)) {
+                                    viewModel.onFrequencyDaysChange(listOf(3))
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -322,6 +413,39 @@ fun AddEditHabitScreen(
                         ) {
                             Text(
                                 text = dayLetter,
+                                color = textColor,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            } else if (freqType == "FLEXIBLE_DAYS") {
+                Text(
+                    text = "Target Days per Week",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    (1..6).forEach { num ->
+                        val isSelected = freqDays.firstOrNull() == num
+                        val circleColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(circleColor)
+                                .clickable {
+                                    viewModel.onFrequencyDaysChange(listOf(num))
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = num.toString(),
                                 color = textColor,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodySmall

@@ -2,6 +2,9 @@ package com.pankaj.habitflow.presentation.screen.today
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -76,6 +79,11 @@ fun TodayScreen(
 
     var triggerConfetti by remember { mutableStateOf(false) }
     var previousCompletionRate by remember { mutableStateOf(stats.completionRate) }
+
+    var showBudgetDialog by remember { mutableStateOf(false) }
+    var selectedBudgetHabit by remember { mutableStateOf<com.pankaj.habitflow.domain.model.Habit?>(null) }
+    var spendingAmount by remember { mutableStateOf("") }
+    var spendingNote by remember { mutableStateOf("") }
 
     LaunchedEffect(stats) {
         if (stats.completionRate >= 1.0f && stats.totalHabits > 0 && previousCompletionRate < 1.0f) {
@@ -390,6 +398,20 @@ fun TodayScreen(
                                                 habit = habit,
                                                 onToggle = { viewModel.toggleHabit(habit.id) },
                                                 onClick = { onHabitClick(habit.id) },
+                                                onLogProgress = { newVal ->
+                                                    viewModel.logProgress(
+                                                        habit.id,
+                                                        newVal,
+                                                        newVal >= (habit.targetValue ?: 1.0),
+                                                        null
+                                                    )
+                                                },
+                                                onLogBudgetClick = {
+                                                    selectedBudgetHabit = habit
+                                                    spendingAmount = habit.valueToday?.toString() ?: ""
+                                                    spendingNote = habit.noteToday ?: ""
+                                                    showBudgetDialog = true
+                                                },
                                                 enabled = isToday
                                             )
                                         }
@@ -398,6 +420,82 @@ fun TodayScreen(
                             }
                         }
                     }
+                }
+
+                if (showBudgetDialog && selectedBudgetHabit != null) {
+                    val habit = selectedBudgetHabit!!
+                    AlertDialog(
+                        onDismissRequest = {
+                            showBudgetDialog = false
+                            selectedBudgetHabit = null
+                        },
+                        title = {
+                            Text(
+                                text = "Log Spending: ${habit.name}",
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        text = {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = spendingAmount,
+                                    onValueChange = { spendingAmount = it },
+                                    label = { Text("Amount Spent (${habit.valueUnit ?: "$"})") },
+                                    placeholder = { Text("0.00") },
+                                    singleLine = true,
+                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = spendingNote,
+                                    onValueChange = { spendingNote = it },
+                                    label = { Text("Where did you spend it? (Notes)") },
+                                    placeholder = { Text("e.g. Coffee, Groceries") },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val amount = spendingAmount.toDoubleOrNull()
+                                    if (amount != null) {
+                                        viewModel.logProgress(
+                                            habitId = habit.id,
+                                            value = amount,
+                                            isCompleted = true,
+                                            note = spendingNote.trim().takeIf { it.isNotBlank() }
+                                        )
+                                    } else if (spendingAmount.isBlank()) {
+                                        viewModel.logProgress(
+                                            habitId = habit.id,
+                                            value = null,
+                                            isCompleted = false,
+                                            note = null
+                                        )
+                                    }
+                                    showBudgetDialog = false
+                                    selectedBudgetHabit = null
+                                }
+                            ) {
+                                Text("Save")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    showBudgetDialog = false
+                                    selectedBudgetHabit = null
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
 
                 ConfettiCelebration(

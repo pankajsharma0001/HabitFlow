@@ -24,6 +24,9 @@ data class HabitEntity(
     val frequencyDays: String? = null,
     val sortOrder: Int = 0,
     val timeOfDay: String = "ANYTIME",
+    val habitType: String = "NORMAL",
+    val targetValue: Double? = null,
+    val valueUnit: String? = null,
     val syncStatus: String = SyncStatus.PENDING_INSERT.name,
     val lastModified: Long = System.currentTimeMillis()
 )

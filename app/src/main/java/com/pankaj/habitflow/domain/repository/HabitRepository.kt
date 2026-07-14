@@ -32,7 +32,10 @@ interface HabitRepository {
         frequencyType: String = "DAILY",
         frequencyDays: String? = null,
         sortOrder: Int = 0,
-        timeOfDay: String = "ANYTIME"
+        timeOfDay: String = "ANYTIME",
+        habitType: String = "NORMAL",
+        targetValue: Double? = null,
+        valueUnit: String? = null
     ): String                       // returns the new habit ID
 
     suspend fun updateHabit(
@@ -46,7 +49,10 @@ interface HabitRepository {
         frequencyType: String = "DAILY",
         frequencyDays: String? = null,
         sortOrder: Int = 0,
-        timeOfDay: String = "ANYTIME"
+        timeOfDay: String = "ANYTIME",
+        habitType: String = "NORMAL",
+        targetValue: Double? = null,
+        valueUnit: String? = null
     )
 
     suspend fun archiveHabit(habitId: String)
@@ -62,6 +68,14 @@ interface HabitRepository {
     suspend fun isHabitCompletedOn(habitId: String, date: LocalDate): Boolean
 
     fun getCompletedHabitIdsForDateFlow(date: LocalDate): Flow<Set<String>>
+
+    fun getRecordsForDateFlow(date: LocalDate): Flow<List<HabitCompletionRecord>>
+
+    fun getAllCompletedRecordsFlow(): Flow<List<HabitCompletionRecord>>
+
+    fun getCompletedRecordsInRangeFlow(startDate: LocalDate, endDate: LocalDate): Flow<List<HabitCompletionRecord>>
+
+    suspend fun logHabitProgress(habitId: String, date: LocalDate, value: Double?, isCompleted: Boolean, note: String? = null)
 
     suspend fun getCompletionNote(habitId: String, date: LocalDate): String?
 

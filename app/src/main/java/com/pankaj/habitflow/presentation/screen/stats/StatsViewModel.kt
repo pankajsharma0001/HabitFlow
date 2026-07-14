@@ -70,8 +70,69 @@ class StatsViewModel @Inject constructor(
             _heatMapData.value = data
         }
     }
+
+    val budgetSpendStats: StateFlow<List<BudgetSpendStats>> = combine(
+        repository.getActiveHabitsFlow(),
+        repository.getAllCompletedRecordsFlow()
+    ) { allHabits, allRecords ->
+        val budgetHabits = allHabits.filter { it.habitType == "BUDGET" }
+        val today = LocalDate.now()
+        val startOfWeek = today.minusDays(6)
+        val startOfMonth = today.minusDays(29)
+
+        budgetHabits.map { habit ->
+            val habitRecords = allRecords.filter { it.habitId == habit.id }
+            val weeklyTotal = habitRecords
+                .filter { !it.date.isBefore(startOfWeek) && !it.date.isAfter(today) }
+                .sumOf { it.value ?: 0.0 }
+
+            val monthlyTotal = habitRecords
+                .filter { !it.date.isBefore(startOfMonth) && !it.date.isAfter(today) }
+                .sumOf { it.value ?: 0.0 }
+
+            val recentTransactions = habitRecords
+                .filter { it.value != null }
+                .sortedByDescending { it.date }
+                .take(5)
+                .map { record ->
+                    SpendTransaction(
+                        date = record.date,
+                        amount = record.value ?: 0.0,
+                        note = record.note
+                    )
+                }
+
+            BudgetSpendStats(
+                habitId = habit.id,
+                habitName = habit.name,
+                currencyUnit = habit.valueUnit ?: "$",
+                weeklyTotal = weeklyTotal,
+                monthlyTotal = monthlyTotal,
+                recentTransactions = recentTransactions
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 }
 
 enum class StatsRange {
     WEEK, MONTH
 }
+
+data class SpendTransaction(
+    val date: LocalDate,
+    val amount: Double,
+    val note: String?
+)
+
+data class BudgetSpendStats(
+    val habitId: String,
+    val habitName: String,
+    val currencyUnit: String,
+    val weeklyTotal: Double,
+    val monthlyTotal: Double,
+    val recentTransactions: List<SpendTransaction>
+)

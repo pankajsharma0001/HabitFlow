@@ -7,6 +7,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.pankaj.habitflow.notification.WeeklySummaryWorker
+import com.pankaj.habitflow.notification.MonthlySummaryWorker
 import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -25,6 +26,7 @@ class HabitFlowApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         scheduleWeeklySummary()
+        scheduleMonthlySummary()
     }
 
     private fun scheduleWeeklySummary() {
@@ -36,6 +38,18 @@ class HabitFlowApp : Application(), Configuration.Provider {
             WeeklySummaryWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             weeklySummaryRequest
+        )
+    }
+
+    private fun scheduleMonthlySummary() {
+        val monthlySummaryRequest = PeriodicWorkRequestBuilder<MonthlySummaryWorker>(
+            30, TimeUnit.DAYS
+        ).build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            MonthlySummaryWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            monthlySummaryRequest
         )
     }
 }
